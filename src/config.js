@@ -3,7 +3,7 @@
 // =========================================
 
 export const BOT_NAME = 'ִnome do seu bot aqui';
-export const OWNER_NUMBER = '5516997468496';
+export const OWNER_NUMBER = '55111111111111';
 export const PREFIX = '/';
 export const API_KEY = 'sua api key da bronyxs aqui';
 
