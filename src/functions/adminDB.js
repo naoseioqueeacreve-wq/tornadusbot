@@ -200,3 +200,22 @@ export function listarWarns(grupoJid) {
     warns
   }));
 }
+// =========================================
+// FUNÇÃO: SET ANTI-BOT
+// =========================================
+export function setAntiBot(jid, ativo) {
+  // ATENÇÃO: Se no seu arquivo a função de ler for "loadDB" ou "readDB", troque aqui.
+  // Geralmente se chama "lerDB".
+  const db = lerDB(); 
+  
+  if (!db.grupos) db.grupos = {};
+  if (!db.grupos[jid]) db.grupos[jid] = {};
+  
+  // Atualiza a configuração
+  db.grupos[jid].antiBot = ativo;
+  
+  // ATENÇÃO: Se a função de salvar for "saveDB", troque aqui.
+  salvarDB(db); 
+  
+  return true;
+}
