@@ -438,3 +438,39 @@ export async function executeValidarCPF(ctx) {
     `✅ Status: *VÁLIDO*`
   );
 }
+// =========================================
+// COMANDO: !quem <pergunta>
+// =========================================
+export async function executeQuem(ctx) {
+  const { reply, isGroup, groupMetadata, q } = ctx;
+
+  if (!isGroup) {
+    return reply('❌ Este comando só pode ser usado em grupos.');
+  }
+
+  if (!q || q.trim().length === 0) {
+    return reply(`❌ Use: !quem <pergunta>\n\n*Exemplo:* !quem vai pagar a conta?`);
+  }
+
+  if (!groupMetadata || !groupMetadata.participants) {
+    return reply('❌ Não foi possível ler os membros do grupo.');
+  }
+
+  // Filtra para não escolher o próprio bot ou contas estranhas
+  const membros = groupMetadata.participants.filter(p => p.id);
+  
+  if (membros.length === 0) {
+    return reply('❌ Não há membros suficientes no grupo.');
+  }
+
+  // Sorteia um membro
+  const aleatorio = membros[Math.floor(Math.random() * membros.length)];
+  const jidAleatorio = aleatorio.id;
+  
+  // Cria a mensagem
+  const pergunta = q.trim();
+  const texto = `🤔 *QUEM ${pergunta.toUpperCase()}?*\n\n🔮 O escolhido(a) foi: @${jidAleatorio.split('@')[0]}!`;
+
+  // Envia a mensagem mencionando a pessoa sorteada
+  return reply(texto, { mentions: [jidAleatorio] });
+}
