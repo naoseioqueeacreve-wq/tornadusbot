@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { areJidsSameUser } from '@whiskeysockets/baileys'; // <-- IMPORT ADICIONADO
+import { areJidsSameUser } from '@whiskeysockets/baileys'; 
 import { PREFIX, BOT_NAME, GRUPO_SUPORTE, GEMINI_API_KEY } from './config.js';
 import { getText, createReply } from './functions/helpers.js';
 import { isOwner, isAdmin, getRealSender } from './functions/permissions.js';
@@ -17,6 +17,10 @@ import { estaAtiva, registrarLeitura } from './functions/autoLeitura.js';
 import { isAntiPVAtivo } from './functions/antipv.js';
 import { getModoIAGrupo } from './functions/iaGrupoDB.js';
 import { isVIP, isVIPCommand } from './functions/vipDB.js';
+
+// IMPORTS DE LEVEL E ATUALIZAÇÃO
+import { adicionarXPLevel, isLevelAtivo } from './functions/levelDB.js';
+import { executeLevelMsg, executeMeuLevel } from './commands/level_cmd.js';
 
 // =========================================
 // IMPORTS DE COMANDOS
@@ -140,32 +144,24 @@ export async function handleMessage(client, msg) {
   const pushName = msg.pushName || 'Usuário';
   const isGroup = jid.endsWith('@g.us');
 
-  // =========================================
-  // 🚨 LÓGICA DO ANTIBOT (ADAPTADA) 🚨
-  // =========================================
+  // 🚨 LÓGICA DO ANTIBOT
   if (isGroup) {
     const configGP = getGrupo(jid);
     if (configGP.antiBot) {
-      // 1. Verifica se a mensagem é de um bot (ID do Baileys)
       const isBotMessage = msg.key.id.startsWith('BAE5') || msg.key.id.startsWith('3EB0');
-      
-      // 2. Verifica se o JID de quem enviou NÃO é o próprio bot
-      // areJidsSameUser compara o JID do remetente com o JID do seu bot
       const isNotMe = !areJidsSameUser(sender, client.user.id);
 
       if (isBotMessage && isNotMe) {
         try {
-          // Tenta remover o bot do grupo
           await client.groupParticipantsUpdate(jid, [sender], 'remove');
           await client.sendMessage(jid, { text: `🤖🚫 *ANTIBOT*\n\nUm bot foi detectado e removido automaticamente.` });
         } catch (e) {
           console.log('Erro ao tentar banir bot:', e.message);
         }
-        return; // Para de processar a mensagem
+        return; 
       }
     }
   }
-  // =========================================
 
   if (!isGroup && isAntiPVAtivo()) {
     const ehDono = isOwner(sender);
@@ -239,9 +235,25 @@ export async function handleMessage(client, msg) {
     } catch (e) {}
   }
 
-  if (sender) {
+  // 📈 SISTEMA DE LEVEL MSG 📈
+  if (sender && isGroup) {
     if (msg.message?.stickerMessage) incrementarFigurinha(sender);
     else incrementarMensagem(sender);
+
+    if (isLevelAtivo(jid)) {
+      let tipo = getTipoMensagem(msg); 
+      
+      if (['text', 'sticker', 'image'].includes(tipo)) {
+        const resLevel = adicionarXPLevel(sender, jid, tipo);
+        
+        if (resLevel.subiu) {
+          await client.sendMessage(jid, { 
+            text: `🎉 *SUBIU DE NÍVEL!*\n\nParabéns @${sender.split('@')[0]}!\nVocê alcançou o nível *${resLevel.nivel}* e agora seu cargo é: *${resLevel.cargo}* 🚀`,
+            mentions: [sender]
+          }, { quoted: msg });
+        }
+      }
+    }
   }
 
   if (isGroup) {
@@ -407,6 +419,10 @@ export async function handleMessage(client, msg) {
     // ================= AFK =================
     case 'afk': await executeAfk(ctx); break;
     case 'afklista': await executeAfkLista(ctx); break;
+
+    // ================= LEVEL MSG =================
+    case 'levelmsg': await executeLevelMsg(ctx); break;
+    case 'meulevel': await executeMeuLevel(ctx); break;
 
     // ================= MENUS =================
     case 'menu':
@@ -715,4 +731,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-        }
+  }
