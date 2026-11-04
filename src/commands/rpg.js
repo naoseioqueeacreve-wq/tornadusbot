@@ -365,67 +365,51 @@ export async function executePix(ctx) {
   const dataFormatada = agora.toLocaleDateString('pt-BR');
   const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+  // =========================================
+  // NOVO DESIGN DO COMPROVANTE (REMETENTE)
+  // =========================================
   const comprovante =
-    `╔══════════════════════════════╗\n` +
-    `║    💸 *COMPROVANTE PIX* 💸    ║\n` +
-    `╚══════════════════════════════╝\n` +
-    `\n` +
-    `🏦 *BANCO:* Freddy Bank\n` +
-    `🔢 *ID:* ${idTransacao}\n` +
-    `📅 *DATA:* ${dataFormatada}\n` +
-    `⏰ *HORA:* ${horaFormatada}\n` +
-    `\n` +
-    `╭──────────────────────────────╮\n` +
-    `│ 📤 *DE:*\n` +
-    `│ 👤 ${pushName}\n` +
-    `│ 📱 ${soDigitos(sender)}\n` +
-    `╰──────────────────────────────╯\n` +
-    `\n` +
-    `╭──────────────────────────────╮\n` +
-    `│ 📥 *PARA:*\n` +
-    `│ 👤 @${tagAlvo}\n` +
-    `│ 📱 ${numeroAlvo}\n` +
-    `╰──────────────────────────────╯\n` +
-    `\n` +
-    `╭──────────────────────────────╮\n` +
-    `│ 💰 *VALOR:* ${valor.toLocaleString('pt-BR')} coins\n` +
-    `│ 💼 *SALDO:* ${saldoNovoRemetente.toLocaleString('pt-BR')} coins\n` +
-    `╰──────────────────────────────╯\n` +
-    `\n` +
-    `✅ *TRANSFERÊNCIA REALIZADA COM SUCESSO!*\n` +
-    `\n` +
-    `╔══════════════════════════════╗\n` +
-    `║   🔒 *Freddy Bank © 2026*    ║\n` +
-    `╚══════════════════════════════╝`;
+    `┌───〔 💸 *COMPROVANTE PIX* 〕\n` +
+    `│\n` +
+    `├─── ♡ 🏦 *TRANSAÇÃO* ♡\n` +
+    `│    └──➤ 🔢 ID: ${idTransacao}\n` +
+    `│    └──➤ 📅 Data: ${dataFormatada} ⏰ ${horaFormatada}\n` +
+    `│\n` +
+    `├─── ♡ 📤 *REMETENTE* ♡\n` +
+    `│    └──➤ 👤 ${pushName}\n` +
+    `│    └──➤ 📱 ${soDigitos(sender)}\n` +
+    `│\n` +
+    `├─── ♡ 📥 *DESTINATÁRIO* ♡\n` +
+    `│    └──➤ 👤 @${tagAlvo}\n` +
+    `│    └──➤ 📱 ${numeroAlvo}\n` +
+    `│\n` +
+    `├─── ♡ 💰 *VALORES* ♡\n` +
+    `│    └──➤ 💸 Enviado: *${valor.toLocaleString('pt-BR')} coins*\n` +
+    `│    └──➤ 💼 Seu saldo: *${saldoNovoRemetente.toLocaleString('pt-BR')} coins*\n` +
+    `│\n` +
+    `└───〔 ✅ *TRANSFERÊNCIA REALIZADA* 〕`;
 
   // 🔔 NOTIFICA O DESTINATÁRIO
   try {
+    // =========================================
+    // NOVO DESIGN DO COMPROVANTE (DESTINATÁRIO)
+    // =========================================
     const comprovanteDestinatario =
-      `╔══════════════════════════════╗\n` +
-      `║  🎉 *PIX RECEBIDO!* 🎉        ║\n` +
-      `╚══════════════════════════════╝\n` +
-      `\n` +
-      `🏦 *BANCO:* Freddy Bank\n` +
-      `🔢 *ID:* ${idTransacao}\n` +
-      `📅 *DATA:* ${dataFormatada}\n` +
-      `⏰ *HORA:* ${horaFormatada}\n` +
-      `\n` +
-      `╭──────────────────────────────╮\n` +
-      `│ 📥 *RECEBIDO DE:*\n` +
-      `│ 👤 ${pushName}\n` +
-      `│ 📱 ${soDigitos(sender)}\n` +
-      `╰──────────────────────────────╯\n` +
-      `\n` +
-      `╭──────────────────────────────╮\n` +
-      `│ 💰 *VALOR:* ${valor.toLocaleString('pt-BR')} coins\n` +
-      `│ 💼 *SEU SALDO:* ${saldoNovoDestinatario.toLocaleString('pt-BR')} coins\n` +
-      `╰──────────────────────────────╯\n` +
-      `\n` +
-      `✅ *Você recebeu um PIX!*\n` +
-      `\n` +
-      `╔══════════════════════════════╗\n` +
-      `║   🔒 *Freddy Bank © 2026*    ║\n` +
-      `╚══════════════════════════════╝`;
+      `┌───〔 🎉 *PIX RECEBIDO!* 〕\n` +
+      `│\n` +
+      `├─── ♡ 🏦 *TRANSAÇÃO* ♡\n` +
+      `│    └──➤ 🔢 ID: ${idTransacao}\n` +
+      `│    └──➤ 📅 Data: ${dataFormatada} ⏰ ${horaFormatada}\n` +
+      `│\n` +
+      `├─── ♡ 📥 *RECEBIDO DE* ♡\n` +
+      `│    └──➤ 👤 ${pushName}\n` +
+      `│    └──➤ 📱 ${soDigitos(sender)}\n` +
+      `│\n` +
+      `├─── ♡ 💰 *VALORES* ♡\n` +
+      `│    └──➤ 💸 Recebido: *${valor.toLocaleString('pt-BR')} coins*\n` +
+      `│    └──➤ 💼 Seu saldo: *${saldoNovoDestinatario.toLocaleString('pt-BR')} coins*\n` +
+      `│\n` +
+      `└───〔 🔒 *Freddy Bank © 2026* 〕`;
 
     await client.sendMessage(msg.key.remoteJid, {
       text: comprovanteDestinatario,
@@ -639,4 +623,4 @@ export async function executeCasas(ctx) {
   }
 
   return reply(texto);
-                                                  }
+}
