@@ -244,6 +244,7 @@ export async function executeMenuMembros(ctx) {
     `│  𖹭 ⚙️ 𝗕𝗔𝗦𝗜𝗖𝗢𝗦  𖹭\n` +
     `│  ╰┈➤ 👤 ${PREFIX}perfil\n` +
     `│  ╰┈➤ 📊 ${PREFIX}meunivel\n` +
+    `│  ╰┈➤ 🏅 ${PREFIX}meulevel\n` + // NOVO COMANDO
     `│  ╰┈➤ 🆔 ${PREFIX}id\n` +
     `│  ╰┈➤ 📊 ${PREFIX}info\n` +
     `│  ╰┈➤ ⏰ ${PREFIX}uptime\n` +
@@ -292,7 +293,7 @@ export async function executeMenuMembros(ctx) {
     `│  𖹭 🌤️ 𝗢𝗨𝗧𝗥𝗢𝗦  𖹭\n` +
     `│  ╰┈➤ 🌤️ ${PREFIX}clima <cidade>\n` +
     `│  ╰┈➤ 🔤 ${PREFIX}sigla <sigla>\n` +
-    `│  ╰┈➤ 🎲 ${PREFIX}quem <pergunta>\n` + // <-- NOVO COMANDO AQUI
+    `│  ╰┈➤ 🎲 ${PREFIX}quem <pergunta>\n` + // NOVO COMANDO
     `│\n` +
     `╰━━━〔 👥 Área dos Membros 〕━━━╯`;
 
@@ -343,7 +344,7 @@ export async function executeMenuAdmin(ctx) {
     `│  ╰┈➤ 🕵️ ${PREFIX}antifake on/off\n` +
     `│  ╰┈➤ 🔗 ${PREFIX}antilink on/off\n` +
     `│  ╰┈➤ 📞 ${PREFIX}anticall on/off\n` +
-    `│  ╰┈➤ 🤖 ${PREFIX}antibot on/off\n` + // <-- NOVO COMANDO AQUI
+    `│  ╰┈➤ 🤖 ${PREFIX}antibot on/off\n` + // NOVO COMANDO
     `│\n` +
     `│  𖹭 🔁 𝗔𝗨𝗧𝗢𝗠𝗔𝗖̧𝗔̃𝗢 𖹭\n` +
     `│  ╰┈➤ 🚪 ${PREFIX}despedida on/off\n` +
@@ -365,6 +366,7 @@ export async function executeMenuAdmin(ctx) {
     `│  ╰┈➤ ✏️ ${PREFIX}setnomegp\n` +
     `│  ╰┈➤ 🖼️ ${PREFIX}setfotogp\n` +
     `│  ╰┈➤ 👑 ${PREFIX}botadm on/off\n` +
+    `│  ╰┈➤ 📈 ${PREFIX}levelmsg on/off\n` + // NOVO COMANDO
     `│\n` +
     `│  𖹭 🧠 𝗠𝗢𝗗𝗢 𝗜𝗔 𖹭\n` +
     `│  ╰┈➤ 🧠 ${PREFIX}modoia 1 → Responde perguntas\n` +
