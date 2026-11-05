@@ -50,6 +50,7 @@ import { executePlay } from './commands/play.js';
 
 // IMPORTS POKÉMON
 import { executePokemon, executeMeusPokemons, executeTrocar, executeAlimentar, executeBatalhaPokemon, executeAtaque, executeLojaPokemon, executeLojaPokebola, executeComprar, executeCapturar, executeAtivarSpawn, executeDesativarSpawn } from './commands/pokemon.js';
+import { executeRaid, executePasse, executeComprarPasse, executeAtivarRaid, executeDesativarRaid, executeForcarRaid } from './commands/raid.js'; // <-- IMPORT DE RAIDS AQUI
 import { forcarSpawn } from './functions/pokemonSpawn.js';
 
 import { executeSetDelay, executeSetLimite, executeAntiFlood } from './commands/antiflood_cmd.js';
@@ -381,6 +382,16 @@ export async function handleMessage(client, msg) {
     case 'capturar': await executeCapturar(ctx); break;
     case 'ativarspawn': await executeAtivarSpawn(ctx); break;
     case 'desativarspawn': await executeDesativarSpawn(ctx); break;
+    
+    // === COMANDOS DE RAID AQUI ===
+    case 'raid': await executeRaid(ctx); break;
+    case 'passe': await executePasse(ctx); break;
+    case 'comprarpasse': await executeComprarPasse(ctx); break;
+    case 'ativarraid': await executeAtivarRaid(ctx); break;
+    case 'desativarraid': await executeDesativarRaid(ctx); break;
+    case 'forcarraid': await executeForcarRaid(ctx); break;
+    // =============================
+
     case 'spawn': 
       if (!ehDono) return reply('❌ Apenas o dono pode forçar o spawn.');
       const forcou = await forcarSpawn(client, jid);
@@ -731,4 +742,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-  }
+        }
