@@ -453,4 +453,232 @@ export const POKEMONS_GEN4 = [
   { id: 394, nome: "Prinplup", emoji: "💧", raridade: "raro", hp: 64, atk: 66, def: 68, velocidade: 50, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/394.png" },
   { id: 395, nome: "Empoleon", emoji: "💧", raridade: "epico", hp: 84, atk: 86, def: 88, velocidade: 60, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/395.png" },
   { id: 396, nome: "Starly", emoji: "🐦", raridade: "comum", hp: 40, atk: 55, def: 30, velocidade: 60, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/396.png" },
-  { id: 397, nome: "Staravia", emoji: "🐦", raridade: "comum", hp: 55, atk: 75, def: 50, velocidade: 80, img: "https://raw.githubusercontent.com/PokeAPI/sp
+  { id: 397, nome: "Staravia", emoji: "🐦", raridade: "comum", hp: 55, atk: 75, def: 50, velocidade: 80, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/397.png" },
+  { id: 398, nome: "Staraptor", emoji: "🦅", raridade: "raro", hp: 85, atk: 120, def: 70, velocidade: 100, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/398.png" },
+  { id: 399, nome: "Bidoof", emoji: "🦫", raridade: "comum", hp: 59, atk: 45, def: 40, velocidade: 31, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/399.png" },
+  { id: 400, nome: "Bibarel", emoji: "🦫", raridade: "comum", hp: 79, atk: 85, def: 60, velocidade: 71, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/400.png" },
+  { id: 401, nome: "Kricketot", emoji: "🦗", raridade: "comum", hp: 37, atk: 25, def: 41, velocidade: 25, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/401.png" },
+  { id: 402, nome: "Kricketune", emoji: "🦗", raridade: "comum", hp: 77, atk: 85, def: 51, velocidade: 65, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/402.png" },
+  { id: 403, nome: "Shinx", emoji: "🐱", raridade: "comum", hp: 45, atk: 65, def: 34, velocidade: 45, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/403.png" },
+  { id: 404, nome: "Luxio", emoji: "🐱", raridade: "raro", hp: 60, atk: 85, def: 49, velocidade: 60, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/404.png" },
+  { id: 405, nome: "Luxray", emoji: "🦁", raridade: "epico", hp: 80, atk: 120, def: 79, velocidade: 70, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/405.png" },
+  { id: 406, nome: "Budew", emoji: "🌱", raridade: "raro", hp: 40, atk: 30, def: 35, velocidade: 55, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/406.png" },
+  { id: 407, nome: "Roserade", emoji: "🌹", raridade: "raro", hp: 60, atk: 70, def: 65, velocidade: 90, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/407.png" },
+  { id: 408, nome: "Cranidos", emoji: "🦴", raridade: "raro", hp: 67, atk: 125, def: 40, velocidade: 58, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/408.png" },
+  { id: 409, nome: "Rampardos", emoji: "🦴", raridade: "epico", hp: 97, atk: 165, def: 60, velocidade: 58, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/409.png" },
+  { id: 410, nome: "Shieldon", emoji: "🛡️", raridade: "raro", hp: 30, atk: 42, def: 118, velocidade: 30, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/410.png" },
+  { id: 411, nome: "Bastiodon", emoji: "🛡️", raridade: "raro", hp: 60, atk: 52, def: 168, velocidade: 30, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/411.png" },
+  { id: 412, nome: "Burmy", emoji: "🍂", raridade: "comum", hp: 40, atk: 29, def: 45, velocidade: 36, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/412.png" },
+  { id: 413, nome: "Wormadam", emoji: "🍂", raridade: "raro", hp: 60, atk: 59, def: 85, velocidade: 36, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/413.png" },
+  { id: 414, nome: "Mothim", emoji: "🦋", raridade: "raro", hp: 70, atk: 94, def: 50, velocidade: 66, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/414.png" },
+  { id: 415, nome: "Combee", emoji: "🐝", raridade: "comum", hp: 30, atk: 30, def: 42, velocidade: 70, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/415.png" },
+  { id: 416, nome: "Vespiquen", emoji: "👑", raridade: "raro", hp: 70, atk: 80, def: 102, velocidade: 40, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/416.png" },
+  { id: 417, nome: "Pachirisu", emoji: "🐿️", raridade: "raro", hp: 60, atk: 45, def: 70, velocidade: 95, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/417.png" },
+  { id: 418, nome: "Buizel", emoji: "🦦", raridade: "comum", hp: 55, atk: 65, def: 35, velocidade: 85, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/418.png" },
+  { id: 419, nome: "Floatzel", emoji: "🦦", raridade: "comum", hp: 85, atk: 105, def: 55, velocidade: 115, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/419.png" },
+  { id: 420, nome: "Cherubi", emoji: "🍒", raridade: "comum", hp: 45, atk: 35, def: 45, velocidade: 35, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/420.png" },
+  { id: 421, nome: "Cherrim", emoji: "🌸", raridade: "raro", hp: 70, atk: 60, def: 70, velocidade: 85, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/421.png" },
+  { id: 422, nome: "Shellos", emoji: "🐌", raridade: "comum", hp: 76, atk: 48, def: 48, velocidade: 34, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/422.png" },
+  { id: 423, nome: "Gastrodon", emoji: "🐌", raridade: "raro", hp: 111, atk: 83, def: 68, velocidade: 39, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/423.png" },
+  { id: 424, nome: "Ambipom", emoji: "🐒", raridade: "raro", hp: 75, atk: 100, def: 66, velocidade: 115, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/424.png" },
+  { id: 425, nome: "Drifloon", emoji: "🎈", raridade: "raro", hp: 90, atk: 50, def: 34, velocidade: 70, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/425.png" },
+  { id: 426, nome: "Drifblim", emoji: "🎈", raridade: "raro", hp: 150, atk: 80, def: 44, velocidade: 80, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/426.png" },
+  { id: 427, nome: "Buneary", emoji: "🐰", raridade: "comum", hp: 55, atk: 66, def: 44, velocidade: 85, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/427.png" },
+  { id: 428, nome: "Lopunny", emoji: "🐰", raridade: "raro", hp: 65, atk: 76, def: 84, velocidade: 105, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/428.png" },
+  { id: 429, nome: "Mismagius", emoji: "🧙", raridade: "raro", hp: 60, atk: 60, def: 60, velocidade: 105, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/429.png" },
+  { id: 430, nome: "Honchkrow", emoji: "🦅", raridade: "raro", hp: 100, atk: 125, def: 52, velocidade: 71, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/430.png" },
+  { id: 431, nome: "Glameow", emoji: "🐱", raridade: "comum", hp: 49, atk: 55, def: 42, velocidade: 85, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/431.png" },
+  { id: 432, nome: "Purugly", emoji: "🐱", raridade: "comum", hp: 71, atk: 82, def: 64, velocidade: 112, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/432.png" },
+  { id: 433, nome: "Chingling", emoji: "🔔", raridade: "raro", hp: 45, atk: 30, def: 50, velocidade: 45, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/433.png" },
+  { id: 434, nome: "Stunky", emoji: "🦨", raridade: "comum", hp: 63, atk: 63, def: 47, velocidade: 74, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/434.png" },
+  { id: 435, nome: "Skuntank", emoji: "🦨", raridade: "comum", hp: 103, atk: 93, def: 67, velocidade: 84, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/435.png" },
+  { id: 436, nome: "Bronzor", emoji: "🪞", raridade: "comum", hp: 57, atk: 24, def: 86, velocidade: 23, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/436.png" },
+  { id: 437, nome: "Bronzong", emoji: "🔔", raridade: "raro", hp: 67, atk: 89, def: 116, velocidade: 33, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/437.png" },
+  { id: 438, nome: "Bonsly", emoji: "🌳", raridade: "raro", hp: 50, atk: 80, def: 95, velocidade: 10, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/438.png" },
+  { id: 439, nome: "Mime Jr.", emoji: "🤡", raridade: "raro", hp: 20, atk: 25, def: 45, velocidade: 60, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/439.png" },
+  { id: 440, nome: "Happiny", emoji: "🥚", raridade: "raro", hp: 100, atk: 5, def: 5, velocidade: 30, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/440.png" },
+  { id: 441, nome: "Chatot", emoji: "🦜", raridade: "raro", hp: 76, atk: 65, def: 45, velocidade: 91, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/441.png" },
+  { id: 442, nome: "Spiritomb", emoji: "👻", raridade: "raro", hp: 50, atk: 92, def: 108, velocidade: 35, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/442.png" },
+  { id: 443, nome: "Gible", emoji: "🦈", raridade: "raro", hp: 58, atk: 70, def: 45, velocidade: 42, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/443.png" },
+  { id: 444, nome: "Gabite", emoji: "🦈", raridade: "epico", hp: 68, atk: 90, def: 65, velocidade: 82, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/444.png" },
+  { id: 445, nome: "Garchomp", emoji: "🦈", raridade: "lendario", hp: 108, atk: 130, def: 95, velocidade: 102, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/445.png" },
+  { id: 446, nome: "Munchlax", emoji: "🍔", raridade: "raro", hp: 135, atk: 85, def: 40, velocidade: 5, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/446.png" },
+  { id: 447, nome: "Riolu", emoji: "🥊", raridade: "raro", hp: 40, atk: 70, def: 40, velocidade: 60, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/447.png" },
+  { id: 448, nome: "Lucario", emoji: "🥋", raridade: "epico", hp: 70, atk: 110, def: 70, velocidade: 90, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/448.png" },
+  { id: 449, nome: "Hippopotas", emoji: "🦛", raridade: "comum", hp: 68, atk: 72, def: 78, velocidade: 32, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/449.png" },
+  { id: 450, nome: "Hippowdon", emoji: "🦛", raridade: "raro", hp: 108, atk: 112, def: 118, velocidade: 47, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/450.png" },
+  { id: 451, nome: "Skorupi", emoji: "🦂", raridade: "comum", hp: 40, atk: 50, def: 90, velocidade: 65, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/451.png" },
+  { id: 452, nome: "Drapion", emoji: "🦂", raridade: "comum", hp: 70, atk: 90, def: 110, velocidade: 95, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/452.png" },
+  { id: 453, nome: "Croagunk", emoji: "🐸", raridade: "comum", hp: 48, atk: 61, def: 40, velocidade: 50, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/453.png" },
+  { id: 454, nome: "Toxicroak", emoji: "🐸", raridade: "comum", hp: 83, atk: 106, def: 65, velocidade: 85, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/454.png" },
+  { id: 455, nome: "Carnivine", emoji: "🪴", raridade: "raro", hp: 74, atk: 100, def: 72, velocidade: 46, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/455.png" },
+  { id: 456, nome: "Finneon", emoji: "🐠", raridade: "comum", hp: 49, atk: 49, def: 56, velocidade: 66, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/456.png" },
+  { id: 457, nome: "Lumineon", emoji: "🐠", raridade: "comum", hp: 69, atk: 69, def: 76, velocidade: 91, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/457.png" },
+  { id: 458, nome: "Mantyke", emoji: "🐟", raridade: "raro", hp: 45, atk: 20, def: 50, velocidade: 50, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/458.png" },
+  { id: 459, nome: "Snover", emoji: "❄️", raridade: "comum", hp: 60, atk: 62, def: 50, velocidade: 40, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/459.png" },
+  { id: 460, nome: "Abomasnow", emoji: "🌲", raridade: "raro", hp: 90, atk: 92, def: 75, velocidade: 60, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/460.png" },
+  { id: 461, nome: "Weavile", emoji: "🐾", raridade: "epico", hp: 70, atk: 120, def: 65, velocidade: 125, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/461.png" },
+  { id: 462, nome: "Magnezone", emoji: "🧲", raridade: "raro", hp: 70, atk: 70, def: 115, velocidade: 60, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/462.png" },
+  { id: 463, nome: "Lickilicky", emoji: "👅", raridade: "raro", hp: 110, atk: 85, def: 95, velocidade: 50, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/463.png" },
+  { id: 464, nome: "Rhyperior", emoji: "🦏", raridade: "epico", hp: 115, atk: 140, def: 130, velocidade: 40, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/464.png" },
+  { id: 465, nome: "Tangrowth", emoji: "🍃", raridade: "raro", hp: 100, atk: 100, def: 125, velocidade: 50, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/465.png" },
+  { id: 466, nome: "Electivire", emoji: "⚡", raridade: "epico", hp: 75, atk: 123, def: 67, velocidade: 95, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/466.png" },
+  { id: 467, nome: "Magmortar", emoji: "🔥", raridade: "epico", hp: 75, atk: 95, def: 67, velocidade: 83, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/467.png" },
+  { id: 468, nome: "Togekiss", emoji: "🕊️", raridade: "epico", hp: 85, atk: 50, def: 95, velocidade: 80, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/468.png" },
+  { id: 469, nome: "Yanmega", emoji: "🦟", raridade: "raro", hp: 86, atk: 76, def: 86, velocidade: 95, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/469.png" },
+  { id: 470, nome: "Leafeon", emoji: "🍃", raridade: "raro", hp: 65, atk: 110, def: 130, velocidade: 95, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/470.png" },
+  { id: 471, nome: "Glaceon", emoji: "🧊", raridade: "raro", hp: 65, atk: 60, def: 110, velocidade: 65, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/471.png" },
+  { id: 472, nome: "Gliscor", emoji: "🦇", raridade: "raro", hp: 75, atk: 95, def: 125, velocidade: 95, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/472.png" },
+  { id: 473, nome: "Mamoswine", emoji: "🦣", raridade: "epico", hp: 110, atk: 130, def: 80, velocidade: 80, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/473.png" },
+  { id: 474, nome: "Porygon-Z", emoji: "💾", raridade: "raro", hp: 85, atk: 80, def: 70, velocidade: 90, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/474.png" },
+  { id: 475, nome: "Gallade", emoji: "⚔️", raridade: "epico", hp: 68, atk: 125, def: 65, velocidade: 80, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/475.png" },
+  { id: 476, nome: "Probopass", emoji: "🧭", raridade: "raro", hp: 60, atk: 55, def: 145, velocidade: 40, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/476.png" },
+  { id: 477, nome: "Dusknoir", emoji: "👁️", raridade: "raro", hp: 45, atk: 100, def: 135, velocidade: 45, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/477.png" },
+  { id: 478, nome: "Froslass", emoji: "❄️", raridade: "raro", hp: 70, atk: 80, def: 70, velocidade: 110, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/478.png" },
+  { id: 479, nome: "Rotom", emoji: "🔌", raridade: "raro", hp: 50, atk: 50, def: 77, velocidade: 91, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/479.png" },
+  { id: 480, nome: "Uxie", emoji: "📚", raridade: "lendario", hp: 75, atk: 75, def: 130, velocidade: 95, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/480.png" },
+  { id: 481, nome: "Mesprit", emoji: "💖", raridade: "lendario", hp: 80, atk: 105, def: 105, velocidade: 80, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/481.png" },
+  { id: 482, nome: "Azelf", emoji: "💪", raridade: "lendario", hp: 75, atk: 125, def: 70, velocidade: 115, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/482.png" },
+  { id: 483, nome: "Dialga", emoji: "⏳", raridade: "lendario", hp: 100, atk: 120, def: 120, velocidade: 90, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/483.png" },
+  { id: 484, nome: "Palkia", emoji: "🌌", raridade: "lendario", hp: 90, atk: 120, def: 100, velocidade: 100, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/484.png" },
+  { id: 485, nome: "Heatran", emoji: "🌋", raridade: "lendario", hp: 91, atk: 90, def: 106, velocidade: 77, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/485.png" },
+  { id: 486, nome: "Regigigas", emoji: "🗿", raridade: "lendario", hp: 110, atk: 160, def: 110, velocidade: 100, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/486.png" },
+  { id: 487, nome: "Giratina", emoji: "🌀", raridade: "lendario", hp: 150, atk: 100, def: 120, velocidade: 90, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/487.png" },
+  { id: 488, nome: "Cresselia", emoji: "🌙", raridade: "lendario", hp: 120, atk: 70, def: 120, velocidade: 85, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/488.png" },
+  { id: 489, nome: "Phione", emoji: "💧", raridade: "raro", hp: 80, atk: 80, def: 80, velocidade: 80, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/489.png" },
+  { id: 490, nome: "Manaphy", emoji: "🌊", raridade: "mitico", hp: 100, atk: 100, def: 100, velocidade: 100, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/490.png" },
+  { id: 491, nome: "Darkrai", emoji: "😈", raridade: "mitico", hp: 70, atk: 90, def: 90, velocidade: 125, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/491.png" },
+  { id: 492, nome: "Shaymin", emoji: "💐", raridade: "mitico", hp: 100, atk: 100, def: 100, velocidade: 100, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/492.png" },
+  { id: 493, nome: "Arceus", emoji: "🌟", raridade: "mitico", hp: 120, atk: 120, def: 120, velocidade: 120, img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/493.png" }
+];
+
+// =========================================
+// FUNÇÕES DO JOGO
+// =========================================
+
+// Junta todas as gerações (para usar em menus e consultas gerais)
+export const POKEMONS = [...POKEMONS_GEN1, ...POKEMONS_GEN2, ...POKEMONS_GEN3, ...POKEMONS_GEN4];
+
+// =========================================
+// ROTAÇÃO DIÁRIA DE GERAÇÕES
+// Cada dia uma geração diferente: 1ª → 2ª → 3ª → 4ª → 1ª → 2ª → 3ª → 4ª ...
+// A troca acontece à meia-noite no fuso configurado abaixo.
+// =========================================
+const FUSO_ROTACAO = 'America/Sao_Paulo';
+
+// Dia em que a 1ª geração está ativa (marca o início do ciclo).
+// Para mudar qual geração cai em cada dia, é só trocar esta data.
+const DATA_BASE_ROTACAO = '2026-10-30';
+
+export const GERACOES = [
+  { numero: 1, nome: '1ª Geração (Kanto)', pokemons: POKEMONS_GEN1 },
+  { numero: 2, nome: '2ª Geração (Johto)', pokemons: POKEMONS_GEN2 },
+  { numero: 3, nome: '3ª Geração (Hoenn)', pokemons: POKEMONS_GEN3 },
+  { numero: 4, nome: '4ª Geração (Sinnoh)', pokemons: POKEMONS_GEN4 }
+];
+
+// Número do dia (inteiro) no fuso configurado. Dias seguidos = números seguidos,
+// então a rotação nunca repete geração na virada de mês ou de ano.
+function numeroDoDia(data = new Date()) {
+  const partes = new Intl.DateTimeFormat('en-CA', {
+    timeZone: FUSO_ROTACAO,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(data);
+  const get = tipo => Number(partes.find(p => p.type === tipo).value);
+  return Math.floor(Date.UTC(get('year'), get('month') - 1, get('day')) / 86400000);
+}
+
+const DIA_BASE = (() => {
+  const [ano, mes, dia] = DATA_BASE_ROTACAO.split('-').map(Number);
+  return Math.floor(Date.UTC(ano, mes - 1, dia) / 86400000);
+})();
+
+// Geração ativa hoje (use deslocamento 1 para "amanhã", 2 para depois de amanhã...)
+export function getGeracaoDoDia(deslocamentoDias = 0) {
+  const total = GERACOES.length;
+  const indice = (((numeroDoDia() - DIA_BASE + deslocamentoDias) % total) + total) % total;
+  return GERACOES[indice];
+}
+
+// Nome da geração ativa hoje (ex.: '3ª Geração (Hoenn)')
+export function getGeracaoAtual() {
+  return getGeracaoDoDia().nome;
+}
+
+export function sortearPokemon() {
+  // Lista da geração ativa hoje
+  const listaAtiva = getGeracaoDoDia().pokemons;
+
+  const pesos = { comum: 50, raro: 25, epico: 15, lendario: 8, mitico: 2 };
+  const sorteados = [];
+  
+  for (const p of listaAtiva) {
+    const peso = pesos[p.raridade] || 10;
+    for (let i = 0; i < peso; i++) sorteados.push(p);
+  }
+  
+  return { ...sorteados[Math.floor(Math.random() * sorteados.length)] };
+}
+
+export function calcularCaptura(pokemon, bolaKey) {
+  const bola = POKEBOLAS[bolaKey] || POKEBOLAS.normal;
+  
+  // Chances base (como no Pokémon GO)
+  const chanceBase = {
+    comum: 0.50,     // 50%
+    raro: 0.25,      // 25%
+    epico: 0.10,     // 10%
+    lendario: 0.03,  // 3%
+    mitico: 0.01     // 1%
+  };
+
+  let chance = (chanceBase[pokemon.raridade] || 0.10) * bola.multiplicador;
+  
+  // Master Ball ignora tudo e captura quase 100%
+  if (bolaKey === 'master') return 0.99;
+
+  // Garante que a chance fique entre 1% e 95%
+  return Math.max(0.01, Math.min(0.95, chance));
+}
+
+// =========================================
+// SISTEMA DE LEVEL DO TREINADOR (POKÉMON GO)
+// =========================================
+export function xpNecessario(nivel) {
+  if (nivel >= 50) return Infinity;
+  return Math.floor(100 * Math.pow(nivel, 2.5));
+}
+
+export function adicionarXpTreinador(user, xpGanho) {
+  if (user.nivel >= 50) {
+    return { subiu: false, user, mensagem: '' };
+  }
+
+  user.xp = (user.xp || 0) + xpGanho;
+  let mensagens = [];
+
+  while (user.xp >= xpNecessario(user.nivel) && user.nivel < 50) {
+    user.xp -= xpNecessario(user.nivel);
+    user.nivel++;
+    
+    const moedas = user.nivel * 100;
+    user.pokecoins += moedas;
+    mensagens.push(`🎉 Subiu para o Nível *${user.nivel}*!\n💰 +${moedas} PokéCoins`);
+
+    if (user.nivel === 5) { user.pokebolas.great += 5; mensagens.push('🎁 +5 Great Balls'); }
+    if (user.nivel === 10) { user.pokebolas.ultra += 5; mensagens.push('🎁 +5 Ultra Balls'); }
+    if (user.nivel === 20) { user.pokebolas.master += 1; mensagens.push('🎁 +1 Master Ball'); }
+    if (user.nivel === 30) { user.itens.poffin = (user.itens.poffin || 0) + 10; mensagens.push('🎁 +10 Poffins'); }
+    if (user.nivel === 40) { mensagens.push('⚠️ *MISSÕES LIBERADAS!* (Em breve você poderá completá-las)'); }
+  }
+
+  if (user.nivel >= 50) {
+    user.xp = 0;
+    user.nivel = 50;
+    mensagens.push('👑 Você alcançou o NÍVEL MÁXIMO (50)!');
+  }
+
+  return { subiu: mensagens.length > 0, user, mensagem: mensagens.join('\n') };
+   }
