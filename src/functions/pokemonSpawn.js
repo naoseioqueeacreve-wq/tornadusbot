@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { sortearPokemon, RARIDADES, IMAGENS, getGeracaoAtual } from './pokemon.js';
 import { lerDB, salvarDB, getGruposSpawn } from './pokemonDB.js';
+import { iniciarRaids } from './pokemonRaid.js';
 
 // Mantidos só por compatibilidade com quem ainda importa estes nomes.
 // O spawn NÃO usa mais os grupos "vistos" pelo bot: ele só acontece nos
@@ -33,6 +34,9 @@ async function baixarImagem(url) {
 }
 
 export function iniciarSpawn(client) {
+  // As raids usam o mesmo ponto de partida: sobem junto com o spawn (e acompanham as reconexões)
+  iniciarRaids(client);
+
   currentClient = client;
   if (cronIniciado) return;
   cronIniciado = true;
@@ -136,4 +140,4 @@ export async function forcarSpawn(client, jid) {
   
   if (!enviou) await client.sendMessage(jid, { text: texto });
   return true;
-}
+    }
