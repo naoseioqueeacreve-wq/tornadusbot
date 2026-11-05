@@ -244,7 +244,7 @@ export async function executeMenuMembros(ctx) {
     `│  𖹭 ⚙️ 𝗕𝗔𝗦𝗜𝗖𝗢𝗦  𖹭\n` +
     `│  ╰┈➤ 👤 ${PREFIX}perfil\n` +
     `│  ╰┈➤ 📊 ${PREFIX}meunivel\n` +
-    `│  ╰┈➤ 🏅 ${PREFIX}meulevel\n` + // NOVO COMANDO
+    `│  ╰┈➤ 🏅 ${PREFIX}meulevel\n` +
     `│  ╰┈➤ 🆔 ${PREFIX}id\n` +
     `│  ╰┈➤ 📊 ${PREFIX}info\n` +
     `│  ╰┈➤ ⏰ ${PREFIX}uptime\n` +
@@ -293,7 +293,7 @@ export async function executeMenuMembros(ctx) {
     `│  𖹭 🌤️ 𝗢𝗨𝗧𝗥𝗢𝗦  𖹭\n` +
     `│  ╰┈➤ 🌤️ ${PREFIX}clima <cidade>\n` +
     `│  ╰┈➤ 🔤 ${PREFIX}sigla <sigla>\n` +
-    `│  ╰┈➤ 🎲 ${PREFIX}quem <pergunta>\n` + // NOVO COMANDO
+    `│  ╰┈➤ 🎲 ${PREFIX}quem <pergunta>\n` +
     `│\n` +
     `╰━━━〔 👥 Área dos Membros 〕━━━╯`;
 
@@ -344,7 +344,7 @@ export async function executeMenuAdmin(ctx) {
     `│  ╰┈➤ 🕵️ ${PREFIX}antifake on/off\n` +
     `│  ╰┈➤ 🔗 ${PREFIX}antilink on/off\n` +
     `│  ╰┈➤ 📞 ${PREFIX}anticall on/off\n` +
-    `│  ╰┈➤ 🤖 ${PREFIX}antibot on/off\n` + // NOVO COMANDO
+    `│  ╰┈➤ 🤖 ${PREFIX}antibot on/off\n` +
     `│\n` +
     `│  𖹭 🔁 𝗔𝗨𝗧𝗢𝗠𝗔𝗖̧𝗔̃𝗢 𖹭\n` +
     `│  ╰┈➤ 🚪 ${PREFIX}despedida on/off\n` +
@@ -366,7 +366,7 @@ export async function executeMenuAdmin(ctx) {
     `│  ╰┈➤ ✏️ ${PREFIX}setnomegp\n` +
     `│  ╰┈➤ 🖼️ ${PREFIX}setfotogp\n` +
     `│  ╰┈➤ 👑 ${PREFIX}botadm on/off\n` +
-    `│  ╰┈➤ 📈 ${PREFIX}levelmsg on/off\n` + // NOVO COMANDO
+    `│  ╰┈➤ 📈 ${PREFIX}levelmsg on/off\n` +
     `│\n` +
     `│  𖹭 🧠 𝗠𝗢𝗗𝗢 𝗜𝗔 𖹭\n` +
     `│  ╰┈➤ 🧠 ${PREFIX}modoia 1 → Responde perguntas\n` +
@@ -399,7 +399,7 @@ export async function executeMenuAdmin(ctx) {
 }
 
 // =========================================
-// MENU POKÉMON
+// MENU POKÉMON (Atualizado com Raids)
 // =========================================
 export async function executeMenuPokemon(ctx) {
   const { reply, sender } = ctx;
@@ -416,6 +416,14 @@ export async function executeMenuPokemon(ctx) {
     `│  ╰┈➤ 🆚 ${PREFIX}batalhapokemon @user\n` +
     `│  ╰┈➤ 💥 ${PREFIX}ataque1 / ataque2 / ataque3\n` +
     `│\n` +
+    `│  𖹭 🔥 𝗥𝗔𝗜𝗗𝗦 𖹭\n` +
+    `│  ╰┈➤ 📖 ${PREFIX}raid ajuda\n` +
+    `│  ╰┈➤ ⚔️ ${PREFIX}raid entrar [n1 n2]\n` +
+    `│  ╰┈➤ 🚪 ${PREFIX}raid sair\n` +
+    `│  ╰┈➤ 🎯 ${PREFIX}raid capturar\n` +
+    `│  ╰┈➤ 🎫 ${PREFIX}passe\n` +
+    `│  ╰┈➤ 🛒 ${PREFIX}comprarpasse [qtd]\n` +
+    `│\n` +
     `│  𖹭 🛒 𝗟𝗢𝗝𝗔𝗦 𖹭\n` +
     `│  ╰┈➤ 🏪 ${PREFIX}lojapokemon\n` +
     `│  ╰┈➤ 🔴 ${PREFIX}lojapokebola\n` +
@@ -428,6 +436,9 @@ export async function executeMenuPokemon(ctx) {
     `│  ╰┈➤ ✅ ${PREFIX}ativarspawn\n` +
     `│  ╰┈➤ 🛑 ${PREFIX}desativarspawn\n` +
     `│  ╰┈➤ 🚀 ${PREFIX}spawn (Forçar Spawn)\n` +
+    `│  ╰┈➤ 🔥 ${PREFIX}ativarraid\n` +
+    `│  ╰┈➤ 🔕 ${PREFIX}desativarraid\n` +
+    `│  ╰┈➤ ⚡ ${PREFIX}forcarraid [1-5]\n` +
     `│\n` +
     `╰━━━〔 ⚡ Mundo Pokémon 🔴 〕━━━╯`;
 
