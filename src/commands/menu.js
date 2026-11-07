@@ -256,6 +256,7 @@ export async function executeMenuMembros(ctx) {
     `│\n` +
     `│  𖹭 🎨 𝗙𝗜𝗚𝗨𝗥𝗜𝗡𝗛𝗔𝗦  𖹭\n` +
     `│  ╰┈➤ 🖼️ ${PREFIX}s (marcar)\n` +
+    `│  ╰┈➤ 🏞️ ${PREFIX}toimage (transformar em foto)\n` +
     `│  ╰┈➤ 🏷️ ${PREFIX}take <nome>\n` +
     `│  ╰┈➤ 🎨 ${PREFIX}brat <texto>\n` +
     `│  ╰┈➤ 💚 ${PREFIX}bratverde <texto>\n` +
@@ -587,4 +588,4 @@ export async function executeMenuBaixar(ctx) {
   const foto = getFotoMenu('baixar');
   if (foto) return reply(menuText, { image: foto });
   return reply(menuText);
-    }
+}
