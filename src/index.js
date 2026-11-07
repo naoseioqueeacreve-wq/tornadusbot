@@ -22,6 +22,13 @@ import { isVIP, isVIPCommand } from './functions/vipDB.js';
 import { adicionarXPLevel, isLevelAtivo } from './functions/levelDB.js';
 import { executeLevelMsg, executeMeuLevel } from './commands/level_cmd.js';
 
+// APIS BRONXYS
+import { 
+  executeLetra, executeGimage, executeSigno, executeYtSearch, 
+  executeMoedas, executeTabelaCamp, executePlayStore, executeCelular, 
+  executePinterest, executeSoundCloud, executeThreads, executeMetadinha 
+} from './commands/apis.js';
+
 // =========================================
 // IMPORTS DE COMANDOS
 // =========================================
@@ -31,13 +38,13 @@ import { executeMenuOwner, executeSay, executeReiniciar, executeBotOff, executeB
 import { executeDefinirCmdFoto, executeRmCmdFoto, executeChannel, executeRmChannel } from './commands/owner_extras.js';
 import { executeModoParceria, executeAddParceria, executeDelParceria, executeListaParceria, executeBan, executeSetFotoGP, executeSetNomeGP } from './commands/adm.js';
 import { executeAntiPalavrao, executeAddPalavra, executeDelPalavra, executeListaPalavras, executeBemVindo, executeSetLegenda, executeSetFotoBV, executeAbrir, executeFechar, executeChamarAdmins, executeMute, executeDesmute, executeSorteio, executeBotAdm, executeAntiFake, executeAdvertir, executeRemoverWarn, executeLimparWarns, executeVerWarns, executeListarWarns, executeAntiBot } from './commands/admin_extras.js';
-import { executePlayVideo, executePinterest, executeAnimal, executePlaylistSpotify } from './commands/pesquisas.js';
+import { executePlayVideo, executePinterest as executePinterestAntigo, executeAnimal, executePlaylistSpotify } from './commands/pesquisas.js';
 import { executeYtmp3, executeYtmp4, executeSnapchat, executeGdrive, executeReddit } from './commands/baixar.js';
 import { executeSticker, executeTake, executeBrat, executeBratVerde, executeBratVideo } from './commands/stickers.js';
 import { executeToImage } from './commands/toimage.js'; 
-import { executeToGif } from './commands/togif.js'; // <-- IMPORT DO TOGIF AQUI
+import { executeToGif } from './commands/togif.js';
 import { executeIA, executeIAModo, executeIALimpar, estaNoModoIA, responderAutomatico } from './commands/ia.js';
-import { executeVelha, executeJogarVelha, executePararVelha, executeQuebraCabeca, executeResponder, executePararQuebra, executeVDD, executeVDDResponder, executeEuNunca, executeVotarEuNunca, executeForca, executeForcaIndividual, executeLetra, executePararForca, executeQuizAnimal, executeResponderQuiz, executePararQuiz, executeAbracar, executeBeijar, executeElogiar, executeShip } from './commands/jogos.js';
+import { executeVelha, executeJogarVelha, executePararVelha, executeQuebraCabeca, executeResponder, executePararQuebra, executeVDD, executeVDDResponder, executeEuNunca, executeVotarEuNunca, executeForca, executeForcaIndividual, executeLetraJogo, executePararForca, executeQuizAnimal, executeResponderQuiz, executePararQuiz, executeAbracar, executeBeijar, executeElogiar, executeShip } from './commands/jogos.js';
 import { executePPT, executeAdivinha, executeChutar, executeRoletaRussa, executeBlackjack, executePalavra, executeDesembaralhar, executeAnagrama, executeRespAnagrama, executeMatematica, executeRespMatematica, executeBandeira, executeRespBandeira, executeMemoria, executeRespMemoria, executeStop, executeRespStop } from './commands/jogos2.js';
 import { executeId, executeInfo, executeUptime, executeConvite, executeMeusDados, executeDado, executeMoeda, executeSorte, executeSimOuNao, executePiada, executeCuriosidade } from './commands/utilidades.js';
 import { executeRaspadinha, executeCassino, executeDuelo, executePresentear, executeTop, executeTopMoney, executeCalc, executeClima, executeSigla, executeGay, executeCorno, executeBeijo } from './commands/novos.js';
@@ -384,21 +391,31 @@ export async function handleMessage(client, msg) {
     case 'capturar': await executeCapturar(ctx); break;
     case 'ativarspawn': await executeAtivarSpawn(ctx); break;
     case 'desativarspawn': await executeDesativarSpawn(ctx); break;
-    
-    // === COMANDOS DE RAID AQUI ===
     case 'raid': await executeRaid(ctx); break;
     case 'passe': await executePasse(ctx); break;
     case 'comprarpasse': await executeComprarPasse(ctx); break;
     case 'ativarraid': await executeAtivarRaid(ctx); break;
     case 'desativarraid': await executeDesativarRaid(ctx); break;
     case 'forcarraid': await executeForcarRaid(ctx); break;
-    // =============================
-
     case 'spawn': 
       if (!ehDono) return reply('❌ Apenas o dono pode forçar o spawn.');
       const forcou = await forcarSpawn(client, jid);
       if (!forcou) reply('⚠️ Já tem um Pokémon esperando captura.');
       break;
+
+    // ================= APIS BRONXYS =================
+    case 'letra': await executeLetra(ctx); break;
+    case 'gimage': case 'img': await executeGimage(ctx); break;
+    case 'signo': case 'horoscopo': await executeSigno(ctx); break;
+    case 'ytsearch': case 'pesquisa_yt': await executeYtSearch(ctx); break;
+    case 'moedas': case 'moeda': await executeMoedas(ctx); break;
+    case 'tabelacamp': case 'campeonato': await executeTabelaCamp(ctx); break;
+    case 'playstore': await executePlayStore(ctx); break;
+    case 'celular': await executeCelular(ctx); break;
+    case 'pinterest': case 'pin': await executePinterest(ctx); break;
+    case 'soundcloud': await executeSoundCloud(ctx); break;
+    case 'threads': await executeThreads(ctx); break;
+    case 'metadinha': await executeMetadinha(ctx); break;
 
     // ================= PROTEÇÃO =================
     case 'antispam': await executeAntiSpam(ctx); break;
@@ -468,7 +485,7 @@ export async function handleMessage(client, msg) {
     case 'ialimpar': await executeIALimpar(ctx); break;
     case 's': case 'sticker': case 'fig': await executeSticker(ctx); break;
     case 'toimage': case 'toimg': await executeToImage(ctx); break; 
-    case 'togif': case 'gif': await executeToGif(ctx); break; // <-- COMANDO TOGIF AQUI
+    case 'togif': case 'gif': await executeToGif(ctx); break; 
     case 'take': case 'rename': await executeTake(ctx); break;
     case 'brat': await executeBrat(ctx); break;
     case 'bratverde': await executeBratVerde(ctx); break;
@@ -482,7 +499,6 @@ export async function handleMessage(client, msg) {
     case 'clima': case 'tempo': await executeClima(ctx); break;
     case 'sigla': await executeSigla(ctx); break;
     case 'dado': await executeDado(ctx); break;
-    case 'moeda': await executeMoeda(ctx); break;
     case 'sorte': await executeSorte(ctx); break;
     case 'simounao': case '8ball': await executeSimOuNao(ctx); break;
     case 'piada': await executePiada(ctx); break;
@@ -505,7 +521,7 @@ export async function handleMessage(client, msg) {
     case 'say': await executeSay(ctx); break;
     case 'reiniciar': await executeReiniciar(ctx); break;
     
-    // === NOVO COMANDO DE ATUALIZAR BOT AQUI ===
+    // === ATUALIZAR BOT ===
     case 'atualizarbot': 
       if (!ehDono) return reply('❌ Apenas o dono do bot pode usar este comando.');
       await reply('🔄 *Iniciando atualização...*\nBuscando mudanças no GitHub. Por favor, aguarde alguns segundos.');
@@ -522,7 +538,6 @@ export async function handleMessage(client, msg) {
         }, 5000);
       }
       break;
-    // =========================================
 
     case 'botoff': await executeBotOff(ctx); break;
     case 'boton': await executeBotOn(ctx); break;
@@ -578,9 +593,8 @@ export async function handleMessage(client, msg) {
     case 'warns': case 'verwarns': await executeVerWarns(ctx); break;
     case 'listarwarns': await executeListarWarns(ctx); break;
 
-    // PESQUISAS
+    // PESQUISAS ANTIGAS
     case 'play-video': case 'play_video': case 'playvideo': case 'playmp4': await executePlayVideo(ctx); break;
-    case 'pinterest': case 'pin': await executePinterest(ctx); break;
     case 'animal': case 'animais': await executeAnimal(ctx); break;
     case 'playlist-spotify': case 'playlist_spotify': case 'spotify-playlist': await executePlaylistSpotify(ctx); break;
 
@@ -606,7 +620,7 @@ export async function handleMessage(client, msg) {
       break;
     case 'forca': await executeForca(ctx); break;
     case 'forcaunica': case 'forca-unica': await executeForcaIndividual(ctx); break;
-    case 'letra': await executeLetra(ctx); break;
+    case 'letra_forca': await executeLetraJogo(ctx); break;
     case 'pararforca': await executePararForca(ctx); break;
     case 'quizanimal': case 'quiz': await executeQuizAnimal(ctx); break;
     case 'responderquiz': await executeResponderQuiz(ctx); break;
@@ -632,7 +646,7 @@ export async function handleMessage(client, msg) {
     // SISTEMAS EXTRAS
     case 'dna': case 'meu-dna': case 'dnacheck': await executeDNA(ctx); break;
     case 'akinator': await executeAkinator(ctx); break;
-    case 'resp': await executeRespAkinator(ctx); break;
+    case 'resp_aki': await executeRespAkinator(ctx); break;
     case 'topakinator': await executeTopAkinator(ctx); break;
     case 'modofnaf': await executeFNAFStart(ctx); break;
     case 'vercamera': await executeVerCamera(ctx); break;
@@ -746,4 +760,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-      }
+  }
