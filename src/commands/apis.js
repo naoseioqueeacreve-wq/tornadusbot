@@ -230,3 +230,86 @@ export async function executePinterest(ctx) {
     return reply('❌ Erro ao buscar imagem no Pinterest.');
   }
 }
+// =========================================
+// COMANDO: !soundcloud <link>
+// =========================================
+export async function executeSoundCloud(ctx) {
+  const { reply, client, msg, q } = ctx;
+  if (!q.trim().includes("soundcloud")) {
+    return reply(`❌ Use: *${PREFIX}soundcloud <link>*\nEx: ${PREFIX}soundcloud https://soundcloud.com/artista/musica`);
+  }
+
+  try {
+    await client.sendMessage(msg.key.remoteJid, { react: { text: '⏳', key: msg.key } });
+    
+    const urlAudio = `https://api.bronxyshost.com.br/api-bronxys/soundcloud?url=${encodeURIComponent(q.trim())}&apikey=${API_KEY_BRONXYS}`;
+    
+    await client.sendMessage(msg.key.remoteJid, { 
+      audio: { url: urlAudio }, 
+      mimetype: "audio/mpeg" 
+    }, { quoted: msg });
+
+    await client.sendMessage(msg.key.remoteJid, { react: { text: '✅', key: msg.key } });
+  } catch (error) {
+    console.error('[SOUNDCLOUD]', error);
+    await client.sendMessage(msg.key.remoteJid, { react: { text: '❌', key: msg.key } });
+    return reply('❌ Erro ao baixar do SoundCloud. Verifique o link e tente novamente.');
+  }
+}
+
+// =========================================
+// COMANDO: !threads <link>
+// =========================================
+export async function executeThreads(ctx) {
+  const { reply, client, msg, q } = ctx;
+  if (!q.trim().includes("threads.net")) {
+    return reply(`❌ Use: *${PREFIX}threads <link>*\nEx: ${PREFIX}threads https://www.threads.net/...`);
+  }
+
+  try {
+    await client.sendMessage(msg.key.remoteJid, { react: { text: '⏳', key: msg.key } });
+    
+    const urlVideo = `https://api.bronxyshost.com.br/api-bronxys/threads?url=${encodeURIComponent(q.trim())}&apikey=${API_KEY_BRONXYS}`;
+    
+    await client.sendMessage(msg.key.remoteJid, { 
+      video: { url: urlVideo }, 
+      mimetype: "video/mp4" 
+    }, { quoted: msg });
+
+    await client.sendMessage(msg.key.remoteJid, { react: { text: '✅', key: msg.key } });
+  } catch (error) {
+    console.error('[THREADS]', error);
+    await client.sendMessage(msg.key.remoteJid, { react: { text: '❌', key: msg.key } });
+    return reply('❌ Erro ao baixar vídeo do Threads. Verifique o link.');
+  }
+}
+
+// =========================================
+// COMANDO: !metadinha
+// =========================================
+export async function executeMetadinha(ctx) {
+  const { reply, client, msg } = ctx;
+  
+  try {
+    const res = await fetch(`https://api.bronxyshost.com.br/api-bronxys/metadinha?apikey=${API_KEY_BRONXYS}`);
+    const data = await res.json();
+    
+    if (!data.link1 || !data.link2) return reply('❌ Não foi possível gerar as fotos.');
+
+    // Envia a primeira foto
+    await client.sendMessage(msg.key.remoteJid, { 
+      image: { url: data.link1 }, 
+      caption: '📸 *Metadinha 1/2*' 
+    }, { quoted: msg });
+
+    // Envia a segunda foto
+    await client.sendMessage(msg.key.remoteJid, { 
+      image: { url: data.link2 }, 
+      caption: '📸 *Metadinha 2/2*' 
+    }, { quoted: msg });
+
+  } catch (error) {
+    console.error('[METADINHA]', error);
+    return reply('❌ Erro ao gerar metadinha. Tente novamente.');
+  }
+}
