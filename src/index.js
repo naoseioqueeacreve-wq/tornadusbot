@@ -22,11 +22,10 @@ import { isVIP, isVIPCommand } from './functions/vipDB.js';
 import { adicionarXPLevel, isLevelAtivo } from './functions/levelDB.js';
 import { executeLevelMsg, executeMeuLevel } from './commands/level_cmd.js';
 
-// APIS BRONXYS
+// APIS YUTA
 import { 
-  executeLetra, executeGimage, executeSigno, executeYtSearch, 
-  executeMoedas, executeTabelaCamp, executePlayStore, executeCelular, 
-  executePinterest, executeSoundCloud, executeThreads, executeMetadinha 
+  executeLetra, executeYtSearch, executePlayStore, 
+  executePinterest, executeMetadinha, executeAkinator 
 } from './commands/apis.js';
 
 // =========================================
@@ -45,7 +44,7 @@ import { executeToImage } from './commands/toimage.js';
 import { executeToGif } from './commands/togif.js';
 import { executeIA, executeIAModo, executeIALimpar, estaNoModoIA, responderAutomatico } from './commands/ia.js';
 
-// --- CORREÇÃO DO ERRO AQUI (executeLetra as executeLetraJogo) ---
+// --- CORREÇÃO DO ERRO DO JOGO DA FORCA AQUI (executeLetra as executeLetraJogo) ---
 import { executeVelha, executeJogarVelha, executePararVelha, executeQuebraCabeca, executeResponder, executePararQuebra, executeVDD, executeVDDResponder, executeEuNunca, executeVotarEuNunca, executeForca, executeForcaIndividual, executeLetra as executeLetraJogo, executePararForca, executeQuizAnimal, executeResponderQuiz, executePararQuiz, executeAbracar, executeBeijar, executeElogiar, executeShip } from './commands/jogos.js';
 
 import { executePPT, executeAdivinha, executeChutar, executeRoletaRussa, executeBlackjack, executePalavra, executeDesembaralhar, executeAnagrama, executeRespAnagrama, executeMatematica, executeRespMatematica, executeBandeira, executeRespBandeira, executeMemoria, executeRespMemoria, executeStop, executeRespStop } from './commands/jogos2.js';
@@ -82,7 +81,7 @@ import { executeBispo } from './commands/bispo.js';
 import { executePadre } from './commands/padre.js';
 import { executeSantoDoDia } from './commands/santododia.js';
 import { executeDNA } from './commands/dna.js';
-import { executeAkinator, executeRespAkinator, executeTopAkinator } from './commands/akinator.js';
+// O Akinator antigo foi removido daqui, pois agora usamos o da Yuta API (executeAkinator)
 import { executeAntiCall } from './commands/anticall.js';
 import { executeAntiLink } from './commands/antilink.js';
 import { executeAfk, executeAfkLista } from './commands/afk.js';
@@ -406,19 +405,13 @@ export async function handleMessage(client, msg) {
       if (!forcou) reply('⚠️ Já tem um Pokémon esperando captura.');
       break;
 
-    // ================= APIS BRONXYS =================
+    // ================= APIS YUTA =================
     case 'letra': await executeLetra(ctx); break;
-    case 'gimage': case 'img': await executeGimage(ctx); break;
-    case 'signo': case 'horoscopo': await executeSigno(ctx); break;
-    case 'ytsearch': case 'pesquisa_yt': await executeYtSearch(ctx); break;
-    case 'moedas': case 'moeda': await executeMoedas(ctx); break;
-    case 'tabelacamp': case 'campeonato': await executeTabelaCamp(ctx); break;
+    case 'ytsearch': await executeYtSearch(ctx); break;
     case 'playstore': await executePlayStore(ctx); break;
-    case 'celular': await executeCelular(ctx); break;
     case 'pinterest': case 'pin': await executePinterest(ctx); break;
-    case 'soundcloud': await executeSoundCloud(ctx); break;
-    case 'threads': await executeThreads(ctx); break;
     case 'metadinha': await executeMetadinha(ctx); break;
+    case 'akinator': await executeAkinator(ctx); break;
 
     // ================= PROTEÇÃO =================
     case 'antispam': await executeAntiSpam(ctx); break;
@@ -502,6 +495,7 @@ export async function handleMessage(client, msg) {
     case 'clima': case 'tempo': await executeClima(ctx); break;
     case 'sigla': await executeSigla(ctx); break;
     case 'dado': await executeDado(ctx); break;
+    case 'moeda': await executeMoeda(ctx); break;
     case 'sorte': await executeSorte(ctx); break;
     case 'simounao': case '8ball': await executeSimOuNao(ctx); break;
     case 'piada': await executePiada(ctx); break;
@@ -648,9 +642,7 @@ export async function handleMessage(client, msg) {
 
     // SISTEMAS EXTRAS
     case 'dna': case 'meu-dna': case 'dnacheck': await executeDNA(ctx); break;
-    case 'akinator': await executeAkinator(ctx); break;
-    case 'resp_aki': await executeRespAkinator(ctx); break;
-    case 'topakinator': await executeTopAkinator(ctx); break;
+    // O comando akinator e resp_aki foram trocados para a Yuta API, então foram removidos daqui
     case 'modofnaf': await executeFNAFStart(ctx); break;
     case 'vercamera': await executeVerCamera(ctx); break;
     case 'fecharcamera': await executeFecharCamera(ctx); break;
@@ -763,4 +755,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-    }
+}
