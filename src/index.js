@@ -34,7 +34,8 @@ import { executeAntiPalavrao, executeAddPalavra, executeDelPalavra, executeLista
 import { executePlayVideo, executePinterest, executeAnimal, executePlaylistSpotify } from './commands/pesquisas.js';
 import { executeYtmp3, executeYtmp4, executeSnapchat, executeGdrive, executeReddit } from './commands/baixar.js';
 import { executeSticker, executeTake, executeBrat, executeBratVerde, executeBratVideo } from './commands/stickers.js';
-import { executeToImage } from './commands/toimage.js'; // <-- IMPORT DO TOIMAGE AQUI
+import { executeToImage } from './commands/toimage.js'; 
+import { executeToGif } from './commands/togif.js'; // <-- IMPORT DO TOGIF AQUI
 import { executeIA, executeIAModo, executeIALimpar, estaNoModoIA, responderAutomatico } from './commands/ia.js';
 import { executeVelha, executeJogarVelha, executePararVelha, executeQuebraCabeca, executeResponder, executePararQuebra, executeVDD, executeVDDResponder, executeEuNunca, executeVotarEuNunca, executeForca, executeForcaIndividual, executeLetra, executePararForca, executeQuizAnimal, executeResponderQuiz, executePararQuiz, executeAbracar, executeBeijar, executeElogiar, executeShip } from './commands/jogos.js';
 import { executePPT, executeAdivinha, executeChutar, executeRoletaRussa, executeBlackjack, executePalavra, executeDesembaralhar, executeAnagrama, executeRespAnagrama, executeMatematica, executeRespMatematica, executeBandeira, executeRespBandeira, executeMemoria, executeRespMemoria, executeStop, executeRespStop } from './commands/jogos2.js';
@@ -466,7 +467,8 @@ export async function handleMessage(client, msg) {
     case 'iamodo': await executeIAModo(ctx); break;
     case 'ialimpar': await executeIALimpar(ctx); break;
     case 's': case 'sticker': case 'fig': await executeSticker(ctx); break;
-    case 'toimage': case 'toimg': await executeToImage(ctx); break; // <-- COMANDO AQUI
+    case 'toimage': case 'toimg': await executeToImage(ctx); break; 
+    case 'togif': case 'gif': await executeToGif(ctx); break; // <-- COMANDO TOGIF AQUI
     case 'take': case 'rename': await executeTake(ctx); break;
     case 'brat': await executeBrat(ctx); break;
     case 'bratverde': await executeBratVerde(ctx); break;
@@ -744,4 +746,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-    }
+      }
