@@ -44,7 +44,10 @@ import { executeSticker, executeTake, executeBrat, executeBratVerde, executeBrat
 import { executeToImage } from './commands/toimage.js'; 
 import { executeToGif } from './commands/togif.js';
 import { executeIA, executeIAModo, executeIALimpar, estaNoModoIA, responderAutomatico } from './commands/ia.js';
-import { executeVelha, executeJogarVelha, executePararVelha, executeQuebraCabeca, executeResponder, executePararQuebra, executeVDD, executeVDDResponder, executeEuNunca, executeVotarEuNunca, executeForca, executeForcaIndividual, executeLetraJogo, executePararForca, executeQuizAnimal, executeResponderQuiz, executePararQuiz, executeAbracar, executeBeijar, executeElogiar, executeShip } from './commands/jogos.js';
+
+// --- CORREÇÃO DO ERRO AQUI (executeLetra as executeLetraJogo) ---
+import { executeVelha, executeJogarVelha, executePararVelha, executeQuebraCabeca, executeResponder, executePararQuebra, executeVDD, executeVDDResponder, executeEuNunca, executeVotarEuNunca, executeForca, executeForcaIndividual, executeLetra as executeLetraJogo, executePararForca, executeQuizAnimal, executeResponderQuiz, executePararQuiz, executeAbracar, executeBeijar, executeElogiar, executeShip } from './commands/jogos.js';
+
 import { executePPT, executeAdivinha, executeChutar, executeRoletaRussa, executeBlackjack, executePalavra, executeDesembaralhar, executeAnagrama, executeRespAnagrama, executeMatematica, executeRespMatematica, executeBandeira, executeRespBandeira, executeMemoria, executeRespMemoria, executeStop, executeRespStop } from './commands/jogos2.js';
 import { executeId, executeInfo, executeUptime, executeConvite, executeMeusDados, executeDado, executeMoeda, executeSorte, executeSimOuNao, executePiada, executeCuriosidade } from './commands/utilidades.js';
 import { executeRaspadinha, executeCassino, executeDuelo, executePresentear, executeTop, executeTopMoney, executeCalc, executeClima, executeSigla, executeGay, executeCorno, executeBeijo } from './commands/novos.js';
@@ -521,7 +524,7 @@ export async function handleMessage(client, msg) {
     case 'say': await executeSay(ctx); break;
     case 'reiniciar': await executeReiniciar(ctx); break;
     
-    // === ATUALIZAR BOT ===
+    // === NOVO COMANDO DE ATUALIZAR BOT AQUI ===
     case 'atualizarbot': 
       if (!ehDono) return reply('❌ Apenas o dono do bot pode usar este comando.');
       await reply('🔄 *Iniciando atualização...*\nBuscando mudanças no GitHub. Por favor, aguarde alguns segundos.');
@@ -620,7 +623,7 @@ export async function handleMessage(client, msg) {
       break;
     case 'forca': await executeForca(ctx); break;
     case 'forcaunica': case 'forca-unica': await executeForcaIndividual(ctx); break;
-    case 'letra_forca': await executeLetraJogo(ctx); break;
+    case 'letra_forca': await executeLetraJogo(ctx); break; // <-- COMANDO DA FORCA AQUI
     case 'pararforca': await executePararForca(ctx); break;
     case 'quizanimal': case 'quiz': await executeQuizAnimal(ctx); break;
     case 'responderquiz': await executeResponderQuiz(ctx); break;
@@ -760,4 +763,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-  }
+    }
