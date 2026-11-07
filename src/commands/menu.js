@@ -257,10 +257,27 @@ export async function executeMenuMembros(ctx) {
     `│  𖹭 🎨 𝗙𝗜𝗚𝗨𝗥𝗜𝗡𝗛𝗔𝗦  𖹭\n` +
     `│  ╰┈➤ 🖼️ ${PREFIX}s (marcar)\n` +
     `│  ╰┈➤ 🏞️ ${PREFIX}toimage (transformar em foto)\n` +
+    `│  ╰┈➤ 🎞️ ${PREFIX}togif (transformar em gif)\n` +
     `│  ╰┈➤ 🏷️ ${PREFIX}take <nome>\n` +
     `│  ╰┈➤ 🎨 ${PREFIX}brat <texto>\n` +
     `│  ╰┈➤ 💚 ${PREFIX}bratverde <texto>\n` +
     `│  ╰┈➤ 🎬 ${PREFIX}bratvideo <texto>\n` +
+    `│\n` +
+    `│  𖹭 🔍 𝗣𝗘𝗦𝗤𝗨𝗜𝗦𝗔𝗦 𝗘 𝗠𝗜𝗗𝗜𝗔 𖹭\n` +
+    `│  ╰┈➤ 🖼️ ${PREFIX}gimage <busca>\n` +
+    `│  ╰┈➤ 📌 ${PREFIX}pinterest <busca>\n` +
+    `│  ╰┈➤ 🔍 ${PREFIX}ytsearch <busca>\n` +
+    `│  ╰┈➤ 🎧 ${PREFIX}soundcloud <link>\n` +
+    `│  ╰┈➤ 🎬 ${PREFIX}threads <link>\n` +
+    `│\n` +
+    `│  𖹭 🛠️ 𝗨𝗧𝗜𝗟𝗜𝗗𝗔𝗗𝗘𝗦 𖹭\n` +
+    `│  ╰┈➤ 🎵 ${PREFIX}letra <música>\n` +
+    `│  ╰┈➤ 🔮 ${PREFIX}signo <signo>\n` +
+    `│  ╰┈➤ 💰 ${PREFIX}moedas\n` +
+    `│  ╰┈➤ 🏆 ${PREFIX}tabelacamp\n` +
+    `│  ╰┈➤ 📱 ${PREFIX}playstore <app>\n` +
+    `│  ╰┈➤ 📱 ${PREFIX}celular <modelo>\n` +
+    `│  ╰┈➤ 🖼️ ${PREFIX}metadinha\n` +
     `│\n` +
     `│  𖹭 📅 𝗗𝗔𝗧𝗔 𝗘 𝗛𝗢𝗥𝗔  𖹭\n` +
     `│  ╰┈➤ 📅 ${PREFIX}data\n` +
@@ -588,4 +605,4 @@ export async function executeMenuBaixar(ctx) {
   const foto = getFotoMenu('baixar');
   if (foto) return reply(menuText, { image: foto });
   return reply(menuText);
-}
+                                                          }
