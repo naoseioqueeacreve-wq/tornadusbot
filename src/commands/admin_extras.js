@@ -9,7 +9,8 @@ import {
   setFotoBV,
   setBotSoAdmins,
   setAntiFake,
-  setAntiBot, // <-- IMPORT ADICIONADO AQUI
+  setAntiBot,
+  setAntiPayment, // <-- IMPORT DO ANTI-PAYMENT
   mutarUsuario,
   desmutarUsuario,
   adicionarWarn,
@@ -24,6 +25,30 @@ import path from 'node:path';
 function temPermissao(ctx) {
   const { sender, groupMetadata } = ctx;
   return isAdmin(sender, groupMetadata) || isOwner(sender);
+}
+
+// =========================================
+// COMANDO: !antipayment
+// =========================================
+export async function executeAntiPayment(ctx) {
+  const { reply, msg, q, isGroup } = ctx;
+  if (!isGroup) return reply('❌ Só em grupos.');
+  if (!temPermissao(ctx)) return reply('❌ Apenas administradores.');
+
+  const arg = q.trim().toLowerCase();
+  const jid = msg.key.remoteJid;
+
+  if (arg === 'on' || arg === '1') {
+    setAntiPayment(jid, true);
+    return reply('✅ *ANTI-PAYMENT ATIVADO*\n\nQualquer tentativa de enviar pedido de dinheiro/pagamento fará o bot banir o autor e fechar o grupo temporariamente.');
+  }
+  if (arg === 'off' || arg === '0') {
+    setAntiPayment(jid, false);
+    return reply('🔓 *ANTI-PAYMENT DESATIVADO*');
+  }
+
+  const g = getGrupo(jid);
+  return reply(`⚙️ *ANTI-PAYMENT*\nStatus: ${g.antiPayment ? '✅ ATIVADO' : '❌ DESATIVADO'}\n\nUse: !antipayment on/off`);
 }
 
 // =========================================
@@ -505,4 +530,4 @@ export async function executeListarWarns(ctx) {
 
   const mentions = lista.map(l => l.jid);
   return reply(texto, { mentions });
-                                           }
+    }
