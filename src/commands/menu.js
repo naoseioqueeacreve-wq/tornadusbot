@@ -363,6 +363,7 @@ export async function executeMenuAdmin(ctx) {
     `│  ╰┈➤ 🔗 ${PREFIX}antilink on/off\n` +
     `│  ╰┈➤ 📞 ${PREFIX}anticall on/off\n` +
     `│  ╰┈➤ 🤖 ${PREFIX}antibot on/off\n` +
+    `│  ╰┈➤ 💸 ${PREFIX}antipayment on/off\n` + // <-- NOVO COMANDO AQUI
     `│\n` +
     `│  𖹭 🔁 𝗔𝗨𝗧𝗢𝗠𝗔𝗖̧𝗔̃𝗢 𖹭\n` +
     `│  ╰┈➤ 🚪 ${PREFIX}despedida on/off\n` +
@@ -605,4 +606,4 @@ export async function executeMenuBaixar(ctx) {
   const foto = getFotoMenu('baixar');
   if (foto) return reply(menuText, { image: foto });
   return reply(menuText);
-                                                          }
+                                    }
