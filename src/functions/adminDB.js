@@ -219,3 +219,13 @@ export function setAntiBot(jid, ativo) {
   
   return true;
 }
+// Adicione no final do arquivo adminDB.js:
+export function setAntiPayment(jid, ativo) {
+  const db = lerDB(); 
+  if (!db.grupos) db.grupos = {};
+  if (!db.grupos[jid]) db.grupos[jid] = {};
+  
+  db.grupos[jid].antiPayment = ativo;
+  salvarDB(db); 
+  return true;
+}
