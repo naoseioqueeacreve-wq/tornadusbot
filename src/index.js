@@ -18,6 +18,9 @@ import { isAntiPVAtivo } from './functions/antipv.js';
 import { getModoIAGrupo } from './functions/iaGrupoDB.js';
 import { isVIP, isVIPCommand } from './functions/vipDB.js';
 
+// SISTEMA ANTI-PAYMENT
+import { hasPaymentMessage, defendAgainstPayment } from './functions/paymentDefense.js';
+
 // IMPORTS DE LEVEL E ATUALIZAÇÃO
 import { adicionarXPLevel, isLevelAtivo } from './functions/levelDB.js';
 import { executeLevelMsg, executeMeuLevel } from './commands/level_cmd.js';
@@ -36,7 +39,7 @@ import { executeMenuGame, executeDaily } from './commands/game.js';
 import { executeMenuOwner, executeSay, executeReiniciar, executeBotOff, executeBotOn, executeNickDono, executeFotoMenu, executeAddCoins, executeRmCoins, executeSetRecado, isBotRestrito } from './commands/owner.js';
 import { executeDefinirCmdFoto, executeRmCmdFoto, executeChannel, executeRmChannel } from './commands/owner_extras.js';
 import { executeModoParceria, executeAddParceria, executeDelParceria, executeListaParceria, executeBan, executeSetFotoGP, executeSetNomeGP } from './commands/adm.js';
-import { executeAntiPalavrao, executeAddPalavra, executeDelPalavra, executeListaPalavras, executeBemVindo, executeSetLegenda, executeSetFotoBV, executeAbrir, executeFechar, executeChamarAdmins, executeMute, executeDesmute, executeSorteio, executeBotAdm, executeAntiFake, executeAdvertir, executeRemoverWarn, executeLimparWarns, executeVerWarns, executeListarWarns, executeAntiBot } from './commands/admin_extras.js';
+import { executeAntiPalavrao, executeAddPalavra, executeDelPalavra, executeListaPalavras, executeBemVindo, executeSetLegenda, executeSetFotoBV, executeAbrir, executeFechar, executeChamarAdmins, executeMute, executeDesmute, executeSorteio, executeBotAdm, executeAntiFake, executeAdvertir, executeRemoverWarn, executeLimparWarns, executeVerWarns, executeListarWarns, executeAntiBot, executeAntiPayment } from './commands/admin_extras.js';
 import { executePlayVideo, executePinterest as executePinterestAntigo, executeAnimal, executePlaylistSpotify } from './commands/pesquisas.js';
 import { executeYtmp3, executeYtmp4, executeSnapchat, executeGdrive, executeReddit } from './commands/baixar.js';
 import { executeSticker, executeTake, executeBrat, executeBratVerde, executeBratVideo } from './commands/stickers.js';
@@ -44,7 +47,7 @@ import { executeToImage } from './commands/toimage.js';
 import { executeToGif } from './commands/togif.js';
 import { executeIA, executeIAModo, executeIALimpar, estaNoModoIA, responderAutomatico } from './commands/ia.js';
 
-// --- CORREÇÃO DO ERRO DO JOGO DA FORCA AQUI (executeLetra as executeLetraJogo) ---
+// --- CORREÇÃO DO ERRO DO JOGO DA FORCA AQUI ---
 import { executeVelha, executeJogarVelha, executePararVelha, executeQuebraCabeca, executeResponder, executePararQuebra, executeVDD, executeVDDResponder, executeEuNunca, executeVotarEuNunca, executeForca, executeForcaIndividual, executeLetra as executeLetraJogo, executePararForca, executeQuizAnimal, executeResponderQuiz, executePararQuiz, executeAbracar, executeBeijar, executeElogiar, executeShip } from './commands/jogos.js';
 
 import { executePPT, executeAdivinha, executeChutar, executeRoletaRussa, executeBlackjack, executePalavra, executeDesembaralhar, executeAnagrama, executeRespAnagrama, executeMatematica, executeRespMatematica, executeBandeira, executeRespBandeira, executeMemoria, executeRespMemoria, executeStop, executeRespStop } from './commands/jogos2.js';
@@ -81,7 +84,6 @@ import { executeBispo } from './commands/bispo.js';
 import { executePadre } from './commands/padre.js';
 import { executeSantoDoDia } from './commands/santododia.js';
 import { executeDNA } from './commands/dna.js';
-// O Akinator antigo foi removido daqui, pois agora usamos o da Yuta API (executeAkinator)
 import { executeAntiCall } from './commands/anticall.js';
 import { executeAntiLink } from './commands/antilink.js';
 import { executeAfk, executeAfkLista } from './commands/afk.js';
@@ -156,9 +158,11 @@ export async function handleMessage(client, msg) {
   const pushName = msg.pushName || 'Usuário';
   const isGroup = jid.endsWith('@g.us');
 
-  // 🚨 LÓGICA DO ANTIBOT
+  // 🚨 VERIFICAÇÃO ANTI-PAYMENT E ANTIBOT
   if (isGroup) {
     const configGP = getGrupo(jid);
+    
+    // AntiBot
     if (configGP.antiBot) {
       const isBotMessage = msg.key.id.startsWith('BAE5') || msg.key.id.startsWith('3EB0');
       const isNotMe = !areJidsSameUser(sender, client.user.id);
@@ -167,10 +171,21 @@ export async function handleMessage(client, msg) {
         try {
           await client.groupParticipantsUpdate(jid, [sender], 'remove');
           await client.sendMessage(jid, { text: `🤖🚫 *ANTIBOT*\n\nUm bot foi detectado e removido automaticamente.` });
-        } catch (e) {
-          console.log('Erro ao tentar banir bot:', e.message);
-        }
+        } catch (e) {}
         return; 
+      }
+    }
+
+    // Anti-Payment
+    if (configGP.antiPayment) {
+      if (hasPaymentMessage(msg)) {
+        await defendAgainstPayment({
+          socket: client,
+          remoteJid: jid,
+          userLid: sender,
+          messageKey: msg.key
+        });
+        return; // Para o processamento da mensagem
       }
     }
   }
@@ -582,6 +597,7 @@ export async function handleMessage(client, msg) {
     case 'botadm': await executeBotAdm(ctx); break;
     case 'antifake': await executeAntiFake(ctx); break;
     case 'antibot': await executeAntiBot(ctx); break; 
+    case 'antipayment': case 'anti-pagamento': await executeAntiPayment(ctx); break; // <-- COMANDO AQUI
     case 'anticall': case 'anti-call': case 'anti-ligacao': await executeAntiCall(ctx); break;
     case 'antilink': case 'anti-link': await executeAntiLink(ctx); break;
     case 'advertir': case 'warn': await executeAdvertir(ctx); break;
@@ -617,7 +633,7 @@ export async function handleMessage(client, msg) {
       break;
     case 'forca': await executeForca(ctx); break;
     case 'forcaunica': case 'forca-unica': await executeForcaIndividual(ctx); break;
-    case 'letra_forca': await executeLetraJogo(ctx); break; // <-- COMANDO DA FORCA AQUI
+    case 'letra_forca': await executeLetraJogo(ctx); break;
     case 'pararforca': await executePararForca(ctx); break;
     case 'quizanimal': case 'quiz': await executeQuizAnimal(ctx); break;
     case 'responderquiz': await executeResponderQuiz(ctx); break;
@@ -642,7 +658,6 @@ export async function handleMessage(client, msg) {
 
     // SISTEMAS EXTRAS
     case 'dna': case 'meu-dna': case 'dnacheck': await executeDNA(ctx); break;
-    // O comando akinator e resp_aki foram trocados para a Yuta API, então foram removidos daqui
     case 'modofnaf': await executeFNAFStart(ctx); break;
     case 'vercamera': await executeVerCamera(ctx); break;
     case 'fecharcamera': await executeFecharCamera(ctx); break;
@@ -755,4 +770,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-}
+  }
