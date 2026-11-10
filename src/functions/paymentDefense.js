@@ -4,6 +4,7 @@ import { delay } from '@whiskeysockets/baileys';
 const PAYMENT_MESSAGE_KEYS = new Set([
   "paymentInviteMessage", "requestPaymentMessage", "sendPaymentMessage", 
   "cancelPaymentRequestMessage", "declinePaymentRequestMessage", "invoiceMessage",
+  "paymentMessage", "nativeFlowResponseMessage"
 ]);
 
 function canScanObject(value) {
@@ -23,7 +24,22 @@ function hasPaymentMessageKey(value, depth = 0, seenObjects = new WeakSet()) {
 }
 
 export function hasPaymentMessage(webMessage) {
-  return hasPaymentMessageKey(webMessage?.message);
+  if (!webMessage) return false;
+  
+  // 1. Verifica as chaves nativas de pagamento
+  if (hasPaymentMessageKey(webMessage.message)) return true;
+  
+  // 2. Converte para string para achar Pix e botões escondidos
+  const msgStr = JSON.stringify(webMessage);
+  
+  // 3. Verifica Chaves Pix (Padrão do Banco Central BR Code)
+  if (msgStr.includes('000201') || msgStr.includes('br.gov.bcb.pix')) return true;
+
+  // 4. Verifica botões interativos de pagamento ou tipo pix
+  if (msgStr.includes('"type":"pix"') || msgStr.includes('"type": "pix"')) return true;
+  if (msgStr.includes('nativeFlowResponseMessage')) return true;
+
+  return false;
 }
 
 // --- EXCLUSÃO ESPECIAL DE PAGAMENTO ---
@@ -40,7 +56,7 @@ export async function deletePaymentMessageWithFallback({ socket, remoteJid, mess
     if (!dummyMessageId) throw new Error("Falha ao gerar ID auxiliar");
 
     await socket.sendMessage(remoteJid, {
-      text: `🚫 *Mensagem de pagamento removida por segurança.*`,
+      text: `🚫 *Mensagem de pagamento/Pix removida por segurança.*`,
       edit: { remoteJid, fromMe: true, id: dummyMessageId },
     }, { messageId: id });
 
@@ -93,7 +109,6 @@ function ensureGroupIncident(socket, remoteJid) {
     try {
       await socket.groupSettingUpdate(remoteJid, "announcement"); // Fecha
       incident.groupClosed = true;
-      // Avisa no grupo (substituindo o sendCleanChat original)
       await socket.sendMessage(remoteJid, { text: "🚨 *ANTI-PAYMENT ATIVADO*\nO grupo foi fechado temporariamente por segurança devido a tentativas de golpe." });
     } catch (e) {}
   })();
@@ -154,4 +169,4 @@ export function defendAgainstPayment({ socket, remoteJid, userLid, messageKey })
   inFlight.set(key, defense);
 
   return defense.finally(() => { inFlight.delete(key); });
-                           }
+        }
