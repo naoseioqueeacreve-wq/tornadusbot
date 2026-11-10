@@ -597,7 +597,7 @@ export async function handleMessage(client, msg) {
     case 'botadm': await executeBotAdm(ctx); break;
     case 'antifake': await executeAntiFake(ctx); break;
     case 'antibot': await executeAntiBot(ctx); break; 
-    case 'antipayment': case 'anti-pagamento': await executeAntiPayment(ctx); break; // <-- COMANDO AQUI
+    case 'antipayment': case 'anti-pagamento': await executeAntiPayment(ctx); break; 
     case 'anticall': case 'anti-call': case 'anti-ligacao': await executeAntiCall(ctx); break;
     case 'antilink': case 'anti-link': await executeAntiLink(ctx); break;
     case 'advertir': case 'warn': await executeAdvertir(ctx); break;
@@ -770,4 +770,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-  }
+}
