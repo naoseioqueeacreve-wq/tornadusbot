@@ -39,7 +39,7 @@ export async function executeMenuOwner(ctx) {
 
   const statusAtual = botStatus === 'online'
     ? '🟢 ONLINE (todos usam)'
-    : '🔴 RESTRITO (só o dono)';
+    : '🔒 RESTRITO (só o dono)';
 
   const menuText =
     `╭━━━━━━━〔 👑 𝐌𝐄𝐍𝐔 𝐃𝐎 𝐃𝐎𝐍𝐎 👑 〕━━━━━━━╮\n` +
@@ -55,12 +55,14 @@ export async function executeMenuOwner(ctx) {
     `│  🖼️ ${PREFIX}fotomenu <menu>\n` +
     `│  🏷️ ${PREFIX}nick-dono <nome>\n` +
     `│  📝 ${PREFIX}setrecado → Forçar recado\n` +
+    `│  ➕ ${PREFIX}addcmd <nome> | <resp>\n` +
+    `│  ➖ ${PREFIX}delcmd <nome>\n` +
     `╰━━━━━━━〔 ⚙️ Sistema ⚙️ 〕━━━━━━━╯\n` +
     `\n` +
     `╭━━━━━━━〔 🔒 𝗔𝗖𝗘𝗦𝗦𝗢 🔒 〕━━━━━━━╮\n` +
-    `│  🔴 ${PREFIX}botoff → Só o dono usa\n` +
+    `│  🔒 ${PREFIX}botoff → Só o dono usa\n` +
     `│  🟢 ${PREFIX}boton → Liberar para todos\n` +
-    `│  ⏸️ ${PREFIX}horariooff <HH:MM> <HH:MM>\n` +
+    `│  ⏰ ${PREFIX}horariooff <HH:MM> <HH:MM>\n` +
     `│  👀 ${PREFIX}horariooff ver\n` +
     `│  ❌ ${PREFIX}horariooff cancelar\n` +
     `╰━━━━━━━〔 🔐 Acesso 🔐 〕━━━━━━━╯\n` +
@@ -118,10 +120,10 @@ export async function executeMenuOwner(ctx) {
     `│  ❌ ${PREFIX}desativarspawn\n` +
     `╰━━━━━━━〔 🎮 Pokémon 🎮 〕━━━━━━━╯\n` +
     `\n` +
-    `╭━━━━━━━〔 💵 𝗘𝗖𝗢𝗡𝗢𝗠𝗜𝗔 💵 〕━━━━━━━╮\n` +
+    `╭━━━━━━━〔 💸 𝗘𝗖𝗢𝗡𝗢𝗠𝗜𝗔 💸 〕━━━━━━━╮\n` +
     `│  ➕ ${PREFIX}addcoins @user <valor>\n` +
     `│  ➖ ${PREFIX}rmcoins @user <valor>\n` +
-    `╰━━━━━━━〔 💵 Economia 💵 〕━━━━━━━╯`;
+    `╰━━━━━━━〔 💸 Economia 💸 〕━━━━━━━╯`;
 
   const foto = getFotoMenu('dono');
   if (foto) {
@@ -166,7 +168,7 @@ export async function executeBotOff(ctx) {
 
   botStatus = 'off';
   console.log('[DONO] Modo RESTRITO ativado.');
-  return reply('🔴 *BOT RESTRITO ATIVADO*\n\nApenas o dono pode usar comandos.');
+  return reply('🔒 *BOT RESTRITO ATIVADO*\n\nApenas o dono pode usar comandos.');
 }
 
 // =========================================
@@ -270,7 +272,7 @@ export async function executeAddCoins(ctx) {
 
   const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
   if (mentions.length === 0) {
-    return reply(`💵 Use: ${PREFIX}addcoins @user <valor>\nExemplo: ${PREFIX}addcoins @joao 500`);
+    return reply(`💸 Use: ${PREFIX}addcoins @user <valor>\nExemplo: ${PREFIX}addcoins @joao 500`);
   }
 
   const alvo = mentions[0];
@@ -304,7 +306,7 @@ export async function executeRmCoins(ctx) {
 
   const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
   if (mentions.length === 0) {
-    return reply(`💵 Use: ${PREFIX}rmcoins @user <valor>\nExemplo: ${PREFIX}rmcoins @joao 500`);
+    return reply(`💸 Use: ${PREFIX}rmcoins @user <valor>\nExemplo: ${PREFIX}rmcoins @joao 500`);
   }
 
   const alvo = mentions[0];
