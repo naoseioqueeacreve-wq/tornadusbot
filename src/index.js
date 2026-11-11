@@ -31,6 +31,10 @@ import {
   executePinterest, executeMetadinha, executeAkinator 
 } from './commands/apis.js';
 
+// COMANDOS PERSONALIZADOS (DONO)
+import { executeAddCmd, executeDelCmd } from './commands/custom_cmd.js';
+import { getCustomCommand } from './functions/customCommandsDB.js';
+
 // =========================================
 // IMPORTS DE COMANDOS
 // =========================================
@@ -377,7 +381,7 @@ export async function handleMessage(client, msg) {
   if (bonus.recebeu) { try { await client.sendMessage(jid, { text: `🎁 *BÔNUS DIÁRIO!*\nVocê recebeu 125 coins!` }, { quoted: msg }); } catch (e) {} }
 
   if (getAluguelGlobal() && isGroup && !ehDono) {
-    const comandosDono = ['aluguelglobal', 'aluguel', 'reiniciar', 'botoff', 'boton', 'setdelay', 'setlimite', 'antiflood', 'addcoins', 'rmcoins', 'addvip', 'addcmdvip', 'antispam', 'autofechar', 'atualizarbot'];
+    const comandosDono = ['aluguelglobal', 'aluguel', 'reiniciar', 'botoff', 'boton', 'setdelay', 'setlimite', 'antiflood', 'addcoins', 'rmcoins', 'addvip', 'addcmdvip', 'antispam', 'autofechar', 'atualizarbot', 'addcmd', 'delcmd'];
     if (!comandosDono.includes(command) && !temAluguelAtivo(jid)) return;
   }
 
@@ -532,6 +536,10 @@ export async function handleMessage(client, msg) {
     // DONO
     case 'say': await executeSay(ctx); break;
     case 'reiniciar': await executeReiniciar(ctx); break;
+    
+    // COMANDOS PERSONALIZADOS (DONO)
+    case 'addcmd': await executeAddCmd(ctx); break;
+    case 'delcmd': await executeDelCmd(ctx); break;
     
     // === NOVO COMANDO DE ATUALIZAR BOT AQUI ===
     case 'atualizarbot': 
@@ -757,7 +765,14 @@ export async function handleMessage(client, msg) {
     case 'bispo': case 'bispo-brasil': await executeBispo(ctx); break;
     case 'padre': await executePadre(ctx); break;
     case 'santododia': await executeSantoDoDia(ctx); break;
-    default: break;
+    
+    default: 
+      // 🕵️ VERIFICA SE É UM COMANDO PERSONALIZADO
+      const customResponse = getCustomCommand(command);
+      if (customResponse) {
+        return reply(customResponse);
+      }
+      break;
   }
 
   if (fotoExiste && ultimoTextoEnviado) {
@@ -770,4 +785,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-}
+  }
