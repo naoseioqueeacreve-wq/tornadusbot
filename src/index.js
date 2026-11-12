@@ -38,9 +38,12 @@ import { getCustomCommand } from './functions/customCommandsDB.js';
 // =========================================
 // IMPORTS DE COMANDOS
 // =========================================
-import { executeMenu, executeMenuAdmin, executeMenuRPG, executeMenuBaixar, executeMenuMembros, executeMenuReligioso, executeMenuCatolico, executeMenuVIP, executeMenuPokemon, executeMenuOwner } from './commands/menu.js';
+import { executeMenu, executeMenuAdmin, executeMenuRPG, executeMenuBaixar, executeMenuMembros, executeMenuReligioso, executeMenuCatolico, executeMenuVIP, executeMenuPokemon } from './commands/menu.js';
+
 import { executeMenuGame, executeDaily } from './commands/game.js';
-import { executeSay, executeReiniciar, executeBotOff, executeBotOn, executeNickDono, executeFotoMenu, executeAddCoins, executeRmCoins, executeSetRecado, isBotRestrito } from './commands/owner.js';
+
+import { executeMenuOwner, executeSay, executeReiniciar, executeBotOff, executeBotOn, executeNickDono, executeFotoMenu, executeAddCoins, executeRmCoins, executeSetRecado, isBotRestrito } from './commands/owner.js';
+
 import { executeDefinirCmdFoto, executeRmCmdFoto, executeChannel, executeRmChannel } from './commands/owner_extras.js';
 import { executeModoParceria, executeAddParceria, executeDelParceria, executeListaParceria, executeBan, executeSetFotoGP, executeSetNomeGP } from './commands/adm.js';
 import { executeAntiPalavrao, executeAddPalavra, executeDelPalavra, executeListaPalavras, executeBemVindo, executeSetLegenda, executeSetFotoBV, executeAbrir, executeFechar, executeChamarAdmins, executeMute, executeDesmute, executeSorteio, executeBotAdm, executeAntiFake, executeAdvertir, executeRemoverWarn, executeLimparWarns, executeVerWarns, executeListarWarns, executeAntiBot, executeAntiPayment } from './commands/admin_extras.js';
@@ -396,7 +399,7 @@ export async function handleMessage(client, msg) {
   if (isVIPCommand(command) && !isVIP(sender) && !ehDono) return reply('❌ Este comando é exclusivo para usuários *VIP*!');
 
   // =========================================
-  // 🕵️ VERIFICA COMANDOS PERSONALIZADOS PRIMEIRO
+  // 🕵️ BLOQUEIO DE COMANDOS PERSONALIZADOS
   // Se o dono criou o comando, ele responde e bloqueia o original
   // =========================================
   const customResponse = getCustomCommand(command);
