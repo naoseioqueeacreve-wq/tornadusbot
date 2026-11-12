@@ -138,19 +138,6 @@ function extrairJid(p) {
 }
 
 // =========================================
-// STATUS DAS CONFIGURAÇÕES
-// =========================================
-function mostrarStatusConfig() {
-  console.log(`${colors.cyan}╔══════════════════════════════════════════════════════════╗${colors.reset}`);
-  console.log(`${colors.cyan}║${colors.reset}              ${colors.bright}${colors.green}⚙️  STATUS DAS CONFIGURAÇÕES ⚙️${colors.reset}               ${colors.cyan}║${colors.reset}`);
-  console.log(`${colors.cyan}╠══════════════════════════════════════════════════════════╣${colors.reset}`);
-  console.log(`${colors.cyan}║${colors.reset} 🤖 Bot: ${BOT_NAME ? `${colors.green}${BOT_NAME} ✅${colors.reset}` : `${colors.red}Não configurado ❌${colors.reset}`}`.padEnd(70, ' ') + `${colors.cyan}║${colors.reset}`);
-  console.log(`${colors.cyan}║${colors.reset} 👤 Dono: ${OWNER_NUMBER ? `${colors.green}Configurado ✅${colors.reset}` : `${colors.red}Não configurado ❌${colors.reset}`}`.padEnd(70, ' ') + `${colors.cyan}║${colors.reset}`);
-  console.log(`${colors.cyan}║${colors.reset} 🔣 Prefixo: ${PREFIX ? `${colors.green}${PREFIX} ✅${colors.reset}` : `${colors.red}Não configurado ❌${colors.reset}`}`.padEnd(70, ' ') + `${colors.cyan}║${colors.reset}`);
-  console.log(`${colors.cyan}╚══════════════════════════════════════════════════════════╝${colors.reset}\n`);
-}
-
-// =========================================
 // LÊ O NÚMERO ANTIGO DA SESSÃO
 // =========================================
 function obterNumeroAntigo() {
@@ -241,9 +228,9 @@ function configurarListeners(client) {
     }
     
     if (connection === 'open') {
-      console.log(`\n${colors.green}╔══════════════════════════════════════════════════════════╗${colors.reset}`);
-      console.log(`${colors.green}║${colors.reset}          ${colors.bright}${colors.green}🎉 BOT CONECTADO COM SUCESSO! 🎉${colors.reset}            ${colors.green}║${colors.reset}`);
-      console.log(`${colors.green}╚══════════════════════════════════════════════════════════╝\n${colors.reset}`);
+      console.log(`\n${colors.green}=========================================${colors.reset}`);
+      console.log(`${colors.green}🎉 BOT CONECTADO COM SUCESSO!${colors.reset}`);
+      console.log(`${colors.green}=========================================\n${colors.reset}`);
       
       await atualizarRecado(client);
       iniciarSpawn(client);
@@ -266,7 +253,7 @@ function configurarListeners(client) {
     for (const msg of messages) {
       if (!msg.message || msg.key.fromMe) continue;
 
-      // LOG MELHORADO DE MENSAGEM NO CONSOLE
+      // LOG DE MENSAGEM NO CONSOLE
       const isGroup = msg.key.remoteJid.endsWith('@g.us');
       const sender = msg.key.participant || msg.key.remoteJid;
       const pushName = msg.pushName || 'Desconhecido';
@@ -382,13 +369,7 @@ async function startConnect() {
   await verificarFFmpeg(); 
   await verificarDependencias(); 
 
-  console.log(`\n${colors.magenta}   ___                 _       ____        _   ${colors.reset}`);
-  console.log(`${colors.magenta}  | __|_ _ ___ _ _  __| |_  _ | __ )  ___ | |_ ${colors.reset}`);
-  console.log(`${colors.magenta}  | _|| '_/ -_) ' \\ / _\` | || ||  _ \\ / _ \\|  _|${colors.reset}`);
-  console.log(`${colors.magenta}  |_| |_| \\___|_||_|\\__,_|\\_, ||____/ \\___/ \\__|${colors.reset}`);
-  console.log(`${colors.magenta}                          |__/                 ${colors.reset}\n`);
-
-  mostrarStatusConfig();
+  // Removemos o banner em ASCII e a caixa de status daqui
 
   const sessionPath = './session';
   const sessionExists = fs.existsSync(sessionPath) && fs.readdirSync(sessionPath).length > 0;
@@ -397,9 +378,9 @@ async function startConnect() {
     const numeroAntigo = obterNumeroAntigo();
     if (numeroAntigo) {
       const rl = readline.createInterface({ input, output });
-      console.log(`\n${colors.cyan}╔══════════════════════════════════════════════════════════╗${colors.reset}`);
-      console.log(`${colors.cyan}║${colors.reset} 🔍 SESSÃO ENCONTRADA!                                   ${colors.cyan}║${colors.reset}`);
-      console.log(`${colors.cyan}╚══════════════════════════════════════════════════════════╝${colors.reset}`);
+      console.log(`\n${colors.cyan}=========================================${colors.reset}`);
+      console.log(`${colors.yellow}🔍 SESSÃO ENCONTRADA!${colors.reset}`);
+      console.log(`${colors.cyan}=========================================${colors.reset}`);
       console.log(`${colors.yellow}👤 Vimos que você conectou o bot no número recentemente: ${colors.green}+${numeroAntigo}${colors.reset}`);
       console.log(`\n${colors.green}1${colors.reset} - ✅ Reconectar com este número`);
       console.log(`${colors.red}2${colors.reset} - 🔄 Conectar um número novo (Apaga a sessão atual)`);
@@ -418,13 +399,11 @@ async function startConnect() {
         return;
       }
     } else {
-      // Sessão existe mas não achou o número no creds.json, tenta conectar direto
       await conectarSessaoExistente();
       return;
     }
   }
 
-  // Se não existe sessão, pede novo número
   await conectarNovoNumero();
 }
 
