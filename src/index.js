@@ -15,11 +15,14 @@ import { logMensagem, logEvento, logErro } from './functions/logger.js';
 import { estaEmHorarioOff } from './functions/horarioOff.js';
 import { estaAtiva, registrarLeitura } from './functions/autoLeitura.js';
 import { isAntiPVAtivo } from './functions/antipv.js';
-import { getModoIAGrupo } from './functions/iaGrupoDB.js';
 import { isVIP, isVIPCommand } from './functions/vipDB.js';
 
 // SISTEMA ANTI-PAYMENT
 import { hasPaymentMessage, defendAgainstPayment } from './functions/paymentDefense.js';
+
+// SISTEMA IA GRUPO (NOVO)
+import { processarIAGrupo } from './functions/iaGrupoCore.js';
+import { executeModoIAGrupo, executePersonalidadeIA } from './commands/iaGrupo_cmd.js';
 
 // IMPORTS DE LEVEL E ATUALIZAÇÃO
 import { adicionarXPLevel, isLevelAtivo } from './functions/levelDB.js';
@@ -39,11 +42,8 @@ import { getCustomCommand } from './functions/customCommandsDB.js';
 // IMPORTS DE COMANDOS
 // =========================================
 import { executeMenu, executeMenuAdmin, executeMenuRPG, executeMenuBaixar, executeMenuMembros, executeMenuReligioso, executeMenuCatolico, executeMenuVIP, executeMenuPokemon } from './commands/menu.js';
-
 import { executeMenuGame, executeDaily } from './commands/game.js';
-
-import { executeMenuOwner, executeSay, executeReiniciar, executeBotOff, executeBotOn, executeNickDono, executeFotoMenu, executeAddCoins, executeRmCoins, executeSetRecado, isBotRestrito } from './commands/owner.js';
-
+import { executeMenuOwner, executeSay, executeReiniciar, executeBotOff, executeBotOn, executeNickDono, executeFotoMenu, executeAddCoins, executeRmCoins, executeSetRecado, isBotRestrito, executeSetNomeIAGlobal } from './commands/owner.js';
 import { executeDefinirCmdFoto, executeRmCmdFoto, executeChannel, executeRmChannel } from './commands/owner_extras.js';
 import { executeModoParceria, executeAddParceria, executeDelParceria, executeListaParceria, executeBan, executeSetFotoGP, executeSetNomeGP } from './commands/adm.js';
 import { executeAntiPalavrao, executeAddPalavra, executeDelPalavra, executeListaPalavras, executeBemVindo, executeSetLegenda, executeSetFotoBV, executeAbrir, executeFechar, executeChamarAdmins, executeMute, executeDesmute, executeSorteio, executeBotAdm, executeAntiFake, executeAdvertir, executeRemoverWarn, executeLimparWarns, executeVerWarns, executeListarWarns, executeAntiBot, executeAntiPayment } from './commands/admin_extras.js';
@@ -81,7 +81,6 @@ import { executeData, executeHora, executeIdade, executeIMC, executePorcentagem,
 import { executeHorarioOff } from './commands/horarioOff_cmd.js';
 import { executeAutoLeitura } from './commands/autoLeitura_cmd.js';
 import { executeAntiPV } from './commands/antipv_cmd.js';
-import { executeModoIAGrupo } from './commands/iaGrupo_cmd.js';
 import { executeAddVIP, executeAddCmdVIP, executeRmCmdVIP } from './commands/vip_cmd.js';
 import { executeVipInfo, executeVipSenha, executeVipQR, executeVipCifrar, executeVipDecifrar, executeVipEmoji } from './commands/vip_funcs.js';
 import { executeReligiao } from './commands/religiao_cmd.js';
@@ -321,23 +320,24 @@ export async function handleMessage(client, msg) {
     return;
   }
 
+  // =========================================
+  // 🧠 SISTEMA DE IA DO GRUPO (NOVO)
+  // =========================================
   if (isGroup && !body.startsWith(PREFIX)) {
-    const modoIA = getModoIAGrupo(jid);
-    if (modoIA > 0) {
-      const chamouBot = bodyLower.includes('freddy') || bodyLower.includes('bot') || bodyLower.includes(BOT_NAME.toLowerCase());
-      if (chamouBot) {
-        let textoLimpo = body.replace(/freddy/gi, '').replace(/bot/gi, '').replace(new RegExp(BOT_NAME, 'gi'), '').replace(/[,\?\!]/g, '').trim();
-        if (textoLimpo.length > 0) {
-          if (modoIA === 1) {
-            await client.sendMessage(jid, { text: '🤔 Deixe-me pensar...' }, { quoted: msg });
-            const resposta = await chamarGemini(textoLimpo, "Você é o Freddy Bot, responda de forma clara e curta.");
-            if (resposta) await client.sendMessage(jid, { text: resposta }, { quoted: msg });
-            return;
-          }
-        }
-      }
+    const resIA = await processarIAGrupo({
+      client, msg, jid, body, pushName, sender, nomeGrupo, chamarGemini,
+      agora: Date.now(), rng: Math.random
+    });
+
+    if (resIA.tratada) return; // Se a IA respondeu ou está processando, o fluxo para aqui.
+
+    if (resIA.comando) {
+      // Se for Modo 2 e a IA traduziu para um comando, o bot assume aquele comando!
+      body = resIA.comando;
+      bodyLower = body.toLowerCase();
     }
   }
+  // =========================================
 
   if (bodyLower === 'prefixo' || bodyLower === 'prefixo?' || bodyLower === 'qual o prefixo') {
     await client.sendMessage(jid, { text: `🤖 O prefixo é: *${PREFIX}*` }, { quoted: msg });
@@ -384,7 +384,7 @@ export async function handleMessage(client, msg) {
   if (bonus.recebeu) { try { await client.sendMessage(jid, { text: `🎁 *BÔNUS DIÁRIO!*\nVocê recebeu 125 coins!` }, { quoted: msg }); } catch (e) {} }
 
   if (getAluguelGlobal() && isGroup && !ehDono) {
-    const comandosDono = ['aluguelglobal', 'aluguel', 'reiniciar', 'botoff', 'boton', 'setdelay', 'setlimite', 'antiflood', 'addcoins', 'rmcoins', 'addvip', 'addcmdvip', 'antispam', 'autofechar', 'atualizarbot', 'addcmd', 'delcmd'];
+    const comandosDono = ['aluguelglobal', 'aluguel', 'reiniciar', 'botoff', 'boton', 'setdelay', 'setlimite', 'antiflood', 'addcoins', 'rmcoins', 'addvip', 'addcmdvip', 'antispam', 'autofechar', 'atualizarbot', 'addcmd', 'delcmd', 'setnomeia'];
     if (!comandosDono.includes(command) && !temAluguelAtivo(jid)) return;
   }
 
@@ -400,7 +400,6 @@ export async function handleMessage(client, msg) {
 
   // =========================================
   // 🕵️ BLOQUEIO DE COMANDOS PERSONALIZADOS
-  // Se o dono criou o comando, ele responde e bloqueia o original
   // =========================================
   const customResponse = getCustomCommand(command);
   if (customResponse) {
@@ -549,6 +548,7 @@ export async function handleMessage(client, msg) {
     // DONO
     case 'say': await executeSay(ctx); break;
     case 'reiniciar': await executeReiniciar(ctx); break;
+    case 'setnomeia': await executeSetNomeIAGlobal(ctx); break;
     
     // COMANDOS PERSONALIZADOS (DONO)
     case 'addcmd': await executeAddCmd(ctx); break;
@@ -593,8 +593,9 @@ export async function handleMessage(client, msg) {
     case 'addcmdvip': await executeAddCmdVIP(ctx); break;
     case 'rmcmdvip': await executeRmCmdVIP(ctx); break;
     
-    // ADMIN
+    // ADMIN E IA GRUPO
     case 'modoia': await executeModoIAGrupo(ctx); break;
+    case 'personalidadeia': await executePersonalidadeIA(ctx); break;
     case 'modoparceria': await executeModoParceria(ctx); break;
     case 'addparceria': await executeAddParceria(ctx); break;
     case 'delparceria': await executeDelParceria(ctx); break;
