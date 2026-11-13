@@ -157,51 +157,63 @@ function obterNumeroAntigo() {
 // MENUS DE CONEXÃO
 // =========================================
 async function conectarNovoNumero() {
-  const rl = readline.createInterface({ input, output });
-  
-  console.log(`${colors.cyan}=========================================${colors.reset}`);
-  console.log(`${colors.yellow}𝐇𝐞𝐲𝐲𝐲, 𝐜𝐨𝐦𝐨 𝐠𝐨𝐬𝐭𝐚𝐫𝐢𝐚 𝐝𝐞 𝐜𝐨𝐧𝐞𝐜𝐭𝐚𝐫 𝐨 𝐛𝐨𝐭? 🤔${colors.reset}`);
-  console.log(`${colors.cyan}=========================================${colors.reset}`);
-  console.log(`${colors.green}1${colors.reset} - Gerar Código de Pareamento`);
-  console.log(`${colors.green}2${colors.reset} - Chamar Suporte`);
-  console.log(`${colors.cyan}=========================================\n${colors.reset}`);
+  let phone = process.env.PHONE_NUMBER || ''; // Tenta pegar das variáveis de ambiente
 
-  const escolha = await rl.question(`${colors.yellow}Opção:${colors.reset} `);
-  if (escolha.trim() === '2') {
-    console.log(`\n${colors.cyan}📞 SUPORTE: https://wa.me/5511999999999\n${colors.reset}`);
-    rl.close(); process.exit(0);
-  }
+  if (!phone) {
+    const rl = readline.createInterface({ input, output });
+    
+    console.log(`\n${colors.cyan}=========================================${colors.reset}`);
+    console.log(`${colors.yellow}𝐇𝐞𝐲𝐲𝐲, 𝐜𝐨𝐦𝐨 𝐠𝐨𝐬𝐭𝐚𝐫𝐢𝐚 𝐝𝐞 𝐜𝐨𝐧𝐞𝐜𝐭𝐚𝐫 𝐨 𝐛𝐨𝐭? 🤔${colors.reset}`);
+    console.log(`${colors.cyan}=========================================${colors.reset}`);
+    console.log(`${colors.green}1${colors.reset} - Gerar Código de Pareamento`);
+    console.log(`${colors.green}2${colors.reset} - Chamar Suporte`);
+    console.log(`${colors.cyan}=========================================\n${colors.reset}`);
 
-  console.log(`\n${colors.cyan}📱 Digite o número (Ex: 5511999999999) ou 0 para voltar:${colors.reset}`);
-  const raw = await rl.question(`${colors.yellow}Número:${colors.reset} `);
-  if (raw.trim() === '0') {
+    const escolha = await rl.question(`${colors.yellow}Opção:${colors.reset} `);
+    if (escolha.trim() === '2') {
+      console.log(`\n${colors.cyan}📞 SUPORTE: https://wa.me/5511999999999\n${colors.reset}`);
+      rl.close(); process.exit(0);
+    }
+
+    console.log(`\n${colors.cyan}📱 Digite o número (Ex: 5511999999999) ou 0 para voltar:${colors.reset}`);
+    const raw = await rl.question(`${colors.yellow}Número:${colors.reset} `);
+    if (raw.trim() === '0') {
+      rl.close();
+      return startConnect();
+    }
+    phone = raw.replace(/\D/g, '');
     rl.close();
-    return startConnect();
+  } else {
+    console.log(`\n${colors.green}✅ Número obtido via Variável de Ambiente: +${phone}${colors.reset}`);
   }
 
-  const phone = raw.replace(/\D/g, '');
   if (phone.length < 10) {
-    console.log(`${colors.red}❌ Número inválido.${colors.reset}`);
-    rl.close();
-    return startConnect();
+    console.log(`${colors.red}❌ Número inválido. O bot vai reiniciar.${colors.reset}`);
+    setTimeout(() => startConnect(), 3000);
+    return;
   }
+
+  console.log(`\n${colors.yellow}⏳ Iniciando conexão para o número +${phone}...${colors.reset}`);
 
   const sessionPath = './session';
   const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
-  const client = makeWASocket({ auth: state, logger });
+  const client = makeWASocket({ auth: state, logger, printQRInTerminal: false });
 
   client.ev.on('connection.update', async (update) => {
-    const { qr } = update;
+    const { qr, connection } = update;
+    
     if (qr) {
       try {
         const code = await client.requestPairingCode(phone);
         console.log(`\n${colors.green}=========================================${colors.reset}`);
         console.log(`${colors.green}✅ SEU CÓDIGO DE PAREAMENTO: ${colors.bright}${colors.yellow}${code}${colors.reset}`);
         console.log(`${colors.green}=========================================\n${colors.reset}`);
+        console.log(`${colors.cyan}👉 Abra o WhatsApp no celular > Aparelhos Conectados > Conectar com número de telefone > Digite o código acima.${colors.reset}`);
       } catch (error) {
-        console.log(`${colors.red}❌ Erro ao gerar código.${colors.reset}`);
+        console.log(`\n${colors.red}❌ ERRO AO GERAR CÓDIGO:${colors.reset}`, error.message);
+        console.log(`${colors.yellow}Dica: Verifique se o número está correto. Tentando reiniciar em 5 segundos...${colors.reset}`);
+        setTimeout(() => startConnect(), 5000);
       }
-      rl.close();
     }
   });
 
@@ -212,7 +224,7 @@ async function conectarNovoNumero() {
 async function conectarSessaoExistente() {
   const sessionPath = './session';
   const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
-  const client = makeWASocket({ auth: state, logger });
+  const client = makeWASocket({ auth: state, logger, printQRInTerminal: false });
 
   client.ev.on('creds.update', saveCreds);
   configurarListeners(client);
@@ -241,9 +253,14 @@ function configurarListeners(client) {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       if (statusCode !== DisconnectReason.loggedOut) {
         console.log(`${colors.yellow}🔄 Conexão caiu. Reconectando...${colors.reset}`);
-        setTimeout(() => startConnect(), 1500);
+        setTimeout(() => startConnect(), 3000);
       } else {
-        console.log(`${colors.red}❌ Sessão desconectada. Apague a pasta session e reinicie.${colors.reset}`);
+        console.log(`\n${colors.red}❌ SESSÃO DESCONECTADA (LOGOUT).${colors.reset}`);
+        console.log(`${colors.yellow}Apagando a pasta session e aguardando para pedir o número novamente...${colors.reset}`);
+        if (fs.existsSync('./session')) {
+          fs.rmSync('./session', { recursive: true, force: true });
+        }
+        setTimeout(() => startConnect(), 3000);
       }
     }
   });
@@ -252,12 +269,12 @@ function configurarListeners(client) {
     if (type !== 'notify') return;
     for (const msg of messages) {
       if (!msg.message || msg.key.fromMe) continue;
-
-      // LOG DE MENSAGEM NO CONSOLE
+      
       const isGroup = msg.key.remoteJid.endsWith('@g.us');
       const sender = msg.key.participant || msg.key.remoteJid;
       const pushName = msg.pushName || 'Desconhecido';
       
+      // Log bonitinho no console
       console.log(`\n${colors.cyan}📥 [NOVA MENSAGEM]${colors.reset}`);
       console.log(`${colors.yellow}👤 Remetente:${colors.reset} ${pushName} (${sender.split('@')[0]})`);
       if (isGroup) console.log(`${colors.magenta}👥 Grupo:${colors.reset} ${msg.key.remoteJid.split('@')[0]}`);
@@ -368,8 +385,6 @@ async function startConnect() {
   await corrigirSharpInterno();
   await verificarFFmpeg(); 
   await verificarDependencias(); 
-
-  // Removemos o banner em ASCII e a caixa de status daqui
 
   const sessionPath = './session';
   const sessionExists = fs.existsSync(sessionPath) && fs.readdirSync(sessionPath).length > 0;
