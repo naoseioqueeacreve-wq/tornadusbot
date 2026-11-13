@@ -1,5 +1,5 @@
 import { PREFIX } from '../config.js';
-import { getConfigIAGrupo, NOME_PADRAO } from './iaGrupoDB.js';
+import { getConfigIAGrupo } from './iaGrupoDB.js';
 
 // =========================================
 // PERSONALIDADES
