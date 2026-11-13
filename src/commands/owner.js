@@ -6,6 +6,7 @@ import {
   lerDB,
   salvarDB
 } from '../functions/rpg.js';
+import { getNomePadraoGlobal, setNomePadraoGlobal } from '../functions/iaGrupoDB.js';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -57,6 +58,7 @@ export async function executeMenuOwner(ctx) {
     `│  📝 ${PREFIX}setrecado → Forçar recado\n` +
     `│  ➕ ${PREFIX}addcmd <nome> | <resp>\n` +
     `│  ➖ ${PREFIX}delcmd <nome>\n` +
+    `│  🤖 ${PREFIX}setnomeia <nome>\n` + // <-- COMANDO AQUI
     `╰━━━━━━━〔 ⚙️ Sistema ⚙️ 〕━━━━━━━╯\n` +
     `\n` +
     `╭━━━━━━━〔 🔒 𝗔𝗖𝗘𝗦𝗦𝗢 🔒 〕━━━━━━━╮\n` +
@@ -362,6 +364,23 @@ export async function executeSetRecado(ctx) {
     console.error('[SETRECADO] Erro:', error);
     return reply(`❌ Erro ao mudar recado.\n\nO WhatsApp pode estar bloqueando a ação temporariamente. Tente novamente mais tarde ou mude manualmente no celular.`);
   }
+}
+
+// =========================================
+// COMANDO: !setnomeia <nome> (Dono)
+// =========================================
+export async function executeSetNomeIAGlobal(ctx) {
+  const { reply, sender, q } = ctx;
+  if (!isOwner(sender)) return reply('❌ Apenas o dono do bot pode usar este comando.');
+
+  const nome = q.trim();
+  if (!nome) return reply(`⚙️ Use: !setnomeia <nome>\nExemplo: !setnomeia Pikachu`);
+
+  if (nome.length > 20) return reply('❌ O nome é muito longo (máximo 20 caracteres).');
+  if (/\d/.test(nome)) return reply('❌ O nome não pode conter números.');
+
+  setNomePadraoGlobal(nome);
+  return reply(`✅ *NOME GLOBAL DA IA ALTERADO*\n\nO nome padrão da IA agora é *${nome}*.\n\nEle será aplicado a todos os grupos que não tenham um nome personalizado.`);
 }
 
 // =========================================
