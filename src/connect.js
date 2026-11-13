@@ -157,7 +157,7 @@ function obterNumeroAntigo() {
 // MENUS DE CONEXÃO
 // =========================================
 async function conectarNovoNumero() {
-  let phone = process.env.PHONE_NUMBER || ''; // Tenta pegar das variáveis de ambiente
+  let phone = process.env.PHONE_NUMBER || ''; 
 
   if (!phone) {
     const rl = readline.createInterface({ input, output });
@@ -209,10 +209,9 @@ async function conectarNovoNumero() {
         console.log(`${colors.green}✅ SEU CÓDIGO DE PAREAMENTO: ${colors.bright}${colors.yellow}${code}${colors.reset}`);
         console.log(`${colors.green}=========================================\n${colors.reset}`);
         console.log(`${colors.cyan}👉 Abra o WhatsApp no celular > Aparelhos Conectados > Conectar com número de telefone > Digite o código acima.${colors.reset}`);
+        console.log(`${colors.red}⚠️ ATENÇÃO: Você tem apenas 1 minuto para digitar este código antes dele expirar!${colors.reset}`);
       } catch (error) {
         console.log(`\n${colors.red}❌ ERRO AO GERAR CÓDIGO:${colors.reset}`, error.message);
-        console.log(`${colors.yellow}Dica: Verifique se o número está correto. Tentando reiniciar em 5 segundos...${colors.reset}`);
-        setTimeout(() => startConnect(), 5000);
       }
     }
   });
@@ -251,15 +250,19 @@ function configurarListeners(client) {
     
     if (connection === 'close') {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
-      if (statusCode !== DisconnectReason.loggedOut) {
-        console.log(`${colors.yellow}🔄 Conexão caiu. Reconectando...${colors.reset}`);
-        setTimeout(() => startConnect(), 3000);
-      } else {
-        console.log(`\n${colors.red}❌ SESSÃO DESCONECTADA (LOGOUT).${colors.reset}`);
-        console.log(`${colors.yellow}Apagando a pasta session e aguardando para pedir o número novamente...${colors.reset}`);
+      
+      // Se foi deslogado (401) ou deu timeout esperando o código (408)
+      if (statusCode === DisconnectReason.loggedOut || statusCode === DisconnectReason.timedOut || statusCode === 401 || statusCode === 408) {
+        console.log(`\n${colors.red}❌ SESSÃO EXPIRADA OU DESCONECTADA.${colors.reset}`);
+        console.log(`${colors.yellow}Apagando a pasta session e pedindo o número novamente...${colors.reset}`);
+        
         if (fs.existsSync('./session')) {
           fs.rmSync('./session', { recursive: true, force: true });
         }
+        
+        setTimeout(() => startConnect(), 3000);
+      } else {
+        console.log(`${colors.yellow}🔄 Conexão caiu (Motivo: ${statusCode || 'Desconhecido'}). Reconectando...${colors.reset}`);
         setTimeout(() => startConnect(), 3000);
       }
     }
@@ -274,7 +277,6 @@ function configurarListeners(client) {
       const sender = msg.key.participant || msg.key.remoteJid;
       const pushName = msg.pushName || 'Desconhecido';
       
-      // Log bonitinho no console
       console.log(`\n${colors.cyan}📥 [NOVA MENSAGEM]${colors.reset}`);
       console.log(`${colors.yellow}👤 Remetente:${colors.reset} ${pushName} (${sender.split('@')[0]})`);
       if (isGroup) console.log(`${colors.magenta}👥 Grupo:${colors.reset} ${msg.key.remoteJid.split('@')[0]}`);
