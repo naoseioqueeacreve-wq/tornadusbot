@@ -37,14 +37,14 @@ export async function executeMenu(ctx) {
   const ehDono = isOwner(sender);
 
   let menuText =
-    `╭━〔 🧸 𝐅𝐑𝐄𝐃𝐃𝐘 𝐁𝐎𝐓 🍯 〕━╮\n` +
+    `╭━〔 ⚡ 𝐏𝐈𝐊𝐀𝐂𝐇𝐔 𝐁𝐎𝐓 🍃 〕━╮\n` +
     `│\n` +
-    `│  🤎 Olá, @${numero}!\n` +
+    `│  ⚡ Olá, @${numero}!\n` +
     `│\n` +
-    `│  *Eu sou o Freddy Bot, seu assistente*\n` +
+    `│  *Eu sou o Pikachu Bot, seu assistente*\n` +
     `│  *virtual completo para WhatsApp!*\n` +
     `│\n` +
-    `│  🤎 𝗦𝗨𝗔𝗦 𝗜𝗡𝗙𝗢𝗥𝗠𝗔𝗖̧𝗢̃𝗘𝗦:\n` +
+    `│  ⚡ 𝗦𝗨𝗔𝗦 𝗜𝗡𝗙𝗢𝗥𝗠𝗔𝗖̧𝗢̃𝗘𝗦:\n` +
     `│  📱 *Número*: ${numero}\n` +
     `│  👑 *Dono*: ${OWNER_NICK}\n` +
     `│  👤 *Usuário*: ${pushName}\n` +
@@ -52,7 +52,7 @@ export async function executeMenu(ctx) {
     `│  💎 *Premium*: ${ehDono ? 'Sim ✅' : 'Não ❌'}\n` +
     `│  ⏰ *Hora*: ${hora}\n` +
     `│\n` +
-    `╰━〔 👑 Dᴏɴᴏ: ${OWNER_NICK} 🐻 〕━╯\n` +
+    `╰━〔 👑 Dᴏɴᴏ: ${OWNER_NICK} ⚡ 〕━╯\n` +
     `\n` +
     `╭━〔 📂 𝗠𝗘𝗡𝗨𝗦 📂 〕━╮\n` +
     `│  🛡️ ${PREFIX}menuadmin\n` +
@@ -64,7 +64,7 @@ export async function executeMenu(ctx) {
     `│  🕊️ ${PREFIX}menureligioso\n` +
     `│  💎 ${PREFIX}menuvip\n` +
     `│  👑 ${PREFIX}menudono\n` +
-    `╰━〔 🧸 Freddy Bot 🍪 〕━╯`;
+    `╰━〔 ⚡ Pikachu Bot 🍃 〕━╯`;
 
   const foto = getFotoMenu('menu');
   if (foto) return reply(menuText, { image: foto, mentions: [sender] });
@@ -87,7 +87,7 @@ export async function executeMenuReligioso(ctx) {
   const horaBrasilia = agora.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' });
   const dataBrasilia = agora.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
-  const menuText = `🤎 ━━━━━━━━ FREDDY EVANGELIZA ━━━━━━━━ 🤎\n` +
+  const menuText = `⚡ ━━━━━━━━ PIKACHU EVANGELIZA ━━━━━━━━ ⚡\n` +
     `\n` +
     `┌─── • 🕊️ PAZ DO SENHOR • ───┐\n` +
     `│\n` +
@@ -125,7 +125,7 @@ export async function executeMenuReligioso(ctx) {
     `✝️ "O Senhor é o meu pastor, nada me faltará."\n` +
     `   — Salmos 23:1\n` +
     `\n` +
-    `🤎 ━━━━━━━━━━━━━━━━━━━━━━━━━ 🤎`;
+    `⚡ ━━━━━━━━━━━━━━━━━━━━━━━━━ ⚡`;
 
   const foto = getFotoMenu('religioso');
   if (foto) return reply(menuText, { image: foto, mentions: [sender] });
@@ -363,7 +363,7 @@ export async function executeMenuAdmin(ctx) {
     `│  ╰┈➤ 🔗 ${PREFIX}antilink on/off\n` +
     `│  ╰┈➤ 📞 ${PREFIX}anticall on/off\n` +
     `│  ╰┈➤ 🤖 ${PREFIX}antibot on/off\n` +
-    `│  ╰┈➤ 💸 ${PREFIX}antipayment on/off\n` + // <-- NOVO COMANDO AQUI
+    `│  ╰┈➤ 💸 ${PREFIX}antipayment on/off\n` +
     `│\n` +
     `│  𖹭 🔁 𝗔𝗨𝗧𝗢𝗠𝗔𝗖̧𝗔̃𝗢 𖹭\n` +
     `│  ╰┈➤ 🚪 ${PREFIX}despedida on/off\n` +
@@ -606,4 +606,104 @@ export async function executeMenuBaixar(ctx) {
   const foto = getFotoMenu('baixar');
   if (foto) return reply(menuText, { image: foto });
   return reply(menuText);
-                                    }
+}
+
+// =========================================
+// MENU COM BOTÕES RÁPIDOS
+// =========================================
+export async function executeMenuBotoes(ctx) {
+  const { client, msg, pushName } = ctx;
+
+  const texto = `⚡ *PIKACHU BOT* 🍃\n\n` +
+    `👤 *USUARIO:* ${pushName}\n` +
+    `🕒 *ONLINE:* Agora mesmo\n\n` +
+    `🎒 Escolha uma opção abaixo:`;
+
+  try {
+    await client.sendMessage(msg.key.remoteJid, {
+      text: texto,
+      footer: "© Pikachu Bot",
+      buttons: [
+        { 
+          buttonId: 'menu', 
+          buttonText: { displayText: '⚡ MENU PRINCIPAL' }, 
+          type: 1 
+        },
+        { 
+          buttonId: 'ping', 
+          buttonText: { displayText: '📍 PING' }, 
+          type: 1 
+        }
+      ],
+      headerType: 1
+    }, { quoted: msg });
+  } catch (error) {
+    console.error('[MENU BOTOES] Erro:', error);
+    return ctx.reply('❌ Seu WhatsApp não suporta botões. Use !menu.');
+  }
+}
+
+// =========================================
+// MENU EM LISTA
+// =========================================
+export async function executeMenuLista(ctx) {
+  const { client, msg } = ctx;
+
+  const sections = [
+    {
+      title: "🧢 MENU DE MEMBROS",
+      rows: [
+        { title: "👤 MENU MEMBROS", description: "Comandos para membros comuns.", rowId: "menumembros" }
+      ]
+    },
+    {
+      title: "🎮 MENU DE JOGOS",
+      rows: [
+        { title: "🕹️ MENU JOGOS", description: "Jogos, brincadeiras e diversão.", rowId: "menugame" }
+      ]
+    },
+    {
+      title: "🎨 MENU DE STICKERS",
+      rows: [
+        { title: "🖼️ MENU STICKERS", description: "Criação e edição de figurinhas.", rowId: "fig" }
+      ]
+    },
+    {
+      title: "⚔️ MENU RPG",
+      rows: [
+        { title: "🗡️ MENU RPG", description: "Sistema de economia e RPG.", rowId: "menurg" }
+      ]
+    },
+    {
+      title: "📥 MENU DOWNLOADS",
+      rows: [
+        { title: "🎵 MENU DOWNLOADS", description: "Downloads de músicas e vídeos.", rowId: "menubaixar" }
+      ]
+    },
+    {
+      title: "🛡️ MENU ADMIN",
+      rows: [
+        { title: "👮 MENU ADMIN", description: "Comandos administrativos e proteções.", rowId: "menuadmin" }
+      ]
+    },
+    {
+      title: "👑 MENU DO DONO",
+      rows: [
+        { title: "⚡ MENU DO DONO", description: "Comandos exclusivos do dono do bot.", rowId: "menudono" }
+      ]
+    }
+  ];
+
+  try {
+    await client.sendMessage(msg.key.remoteJid, {
+      text: "⚡ *PIKACHU BOT* 🍃\n\nEscolha uma categoria abaixo!",
+      footer: "© Pikachu Bot",
+      title: "📋 LISTA DE MENUS",
+      buttonText: "Selecionar",
+      sections: sections
+    }, { quoted: msg });
+  } catch (error) {
+    console.error('[MENU LISTA] Erro:', error);
+    return ctx.reply('❌ Seu WhatsApp não suporta listas. Use !menu.');
+  }
+    }
