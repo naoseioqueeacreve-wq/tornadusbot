@@ -172,10 +172,18 @@ export async function handleMessage(client, msg) {
     body = msg.message.listResponseMessage.singleSelectReply.selectedRowId;
   } else if (msg.message?.templateButtonReplyMessage) {
     body = msg.message.templateButtonReplyMessage.selectedId;
+  } else if (msg.message?.interactiveResponseMessage) {
+    // 👇 AQUI LÊ OS BOTÕES INTERATIVOS (single_select)
+    try {
+      const params = JSON.parse(msg.message.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson);
+      body = params.id;
+    } catch (e) {
+      console.log("[ERRO] Falha ao ler botão interativo:", e);
+    }
   }
 
-  // Se a pessoa clicou num botão, adicionamos o prefixo para o bot achar o comando
-  if (body && !body.startsWith(PREFIX) && (msg.message?.buttonsResponseMessage || msg.message?.listResponseMessage || msg.message?.templateButtonReplyMessage)) {
+  // Se a pessoa clicou num botão, garante que tem o prefixo (!, /, etc)
+  if (body && !body.startsWith(PREFIX) && (msg.message?.buttonsResponseMessage || msg.message?.listResponseMessage || msg.message?.templateButtonReplyMessage || msg.message?.interactiveResponseMessage)) {
     body = PREFIX + body;
   }
 
