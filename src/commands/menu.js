@@ -644,66 +644,97 @@ export async function executeMenuBotoes(ctx) {
 }
 
 // =========================================
-// MENU EM LISTA
+// MENU EM LISTA (BOTÕES INTERATIVOS)
 // =========================================
 export async function executeMenuLista(ctx) {
-  const { client, msg } = ctx;
+  const { client, msg, pushName } = ctx;
+  const prefixo = PREFIX;
+
+  const texto = `⚡ *PIKACHU BOT* 🍃\n\n` +
+    `👤 *USUARIO:* @${pushName}\n` +
+    `🎒 *Escolha o menu desejado abaixo!* ↴`;
 
   const sections = [
     {
-      title: "🧢 MENU DE MEMBROS",
+      title: "⏤͟͟͞͞ 𝙿𝚁𝙸𝙽𝙲𝙸𝙿𝙰𝙻 ↴",
+      highlight_label: "Popular",
       rows: [
-        { title: "👤 MENU MEMBROS", description: "Comandos para membros comuns.", rowId: "menumembros" }
+        {
+          title: "⚡ MENU PRINCIPAL 💖",
+          description: "O menu inicial do bot.",
+          id: `${prefixo}menu`
+        }
       ]
     },
     {
-      title: "🎮 MENU DE JOGOS",
+      title: "⏤͟͟͞͞ 𝙼𝙴𝙽𝚄𝚂 𝙳𝙴 𝙰𝙳𝙼𝙸𝙽𝙸𝚂𝚃𝚁𝙰𝙲̧𝙰̃𝙾 ↴",
       rows: [
-        { title: "🕹️ MENU JOGOS", description: "Jogos, brincadeiras e diversão.", rowId: "menugame" }
+        {
+          title: "👑 MENU DONO",
+          description: "Comandos exclusivos do dono.",
+          id: `${prefixo}menudono`
+        },
+        {
+          title: "🛡️ MENU ADMIN",
+          description: "Ferramentas de moderação.",
+          id: `${prefixo}menuadmin`
+        }
       ]
     },
     {
-      title: "🎨 MENU DE STICKERS",
+      title: "⏤͟͟͞͞ 𝙾𝚄𝚃𝚁𝙾𝚂 𝙼𝙴𝙽𝚄𝚂 ↴",
       rows: [
-        { title: "🖼️ MENU STICKERS", description: "Criação e edição de figurinhas.", rowId: "fig" }
-      ]
-    },
-    {
-      title: "⚔️ MENU RPG",
-      rows: [
-        { title: "🗡️ MENU RPG", description: "Sistema de economia e RPG.", rowId: "menurg" }
-      ]
-    },
-    {
-      title: "📥 MENU DOWNLOADS",
-      rows: [
-        { title: "🎵 MENU DOWNLOADS", description: "Downloads de músicas e vídeos.", rowId: "menubaixar" }
-      ]
-    },
-    {
-      title: "🛡️ MENU ADMIN",
-      rows: [
-        { title: "👮 MENU ADMIN", description: "Comandos administrativos e proteções.", rowId: "menuadmin" }
-      ]
-    },
-    {
-      title: "👑 MENU DO DONO",
-      rows: [
-        { title: "⚡ MENU DO DONO", description: "Comandos exclusivos do dono do bot.", rowId: "menudono" }
+        {
+          title: "🎮 MENU JOGOS",
+          description: "Jogos e brincadeiras.",
+          id: `${prefixo}menugame`
+        },
+        {
+          title: "⚔️ MENU RPG",
+          description: "Sistema de economia.",
+          id: `${prefixo}menurg`
+        },
+        {
+          title: "🎒 MENU POKÉMON",
+          description: "Capture, batalhe e treine.",
+          id: `${prefixo}menupokemon`
+        },
+        {
+          title: "📥 MENU DOWNLOADS",
+          description: "Downloads de mídias.",
+          id: `${prefixo}menubaixar`
+        },
+        {
+          title: "👥 MENU MEMBROS",
+          description: "Utilidades para membros.",
+          id: `${prefixo}menumembros`
+        },
+        {
+          title: "💎 MENU VIP",
+          description: "Área exclusiva VIP.",
+          id: `${prefixo}menuvip`
+        }
       ]
     }
   ];
 
   try {
     await client.sendMessage(msg.key.remoteJid, {
-      text: "⚡ *PIKACHU BOT* 🍃\n\nEscolha uma categoria abaixo!",
+      text: texto,
       footer: "© Pikachu Bot",
-      title: "📋 LISTA DE MENUS",
-      buttonText: "Selecionar",
-      sections: sections
+      interactiveButtons: [
+        {
+          name: "single_select",
+          buttonParamsJson: JSON.stringify({
+            title: "『 𝑽𝑬𝑹 𝑳𝑰𝑺𝑻𝑨 』",
+            sections: sections
+          })
+        }
+      ],
+      mentions: [msg.key.participant || msg.key.remoteJid]
     }, { quoted: msg });
   } catch (error) {
     console.error('[MENU LISTA] Erro:', error);
     return ctx.reply('❌ Seu WhatsApp não suporta listas. Use !menu.');
   }
-    }
+          }
