@@ -179,7 +179,7 @@ async function conectarNovoNumero() {
     const raw = await rl.question(`${colors.yellow}Número:${colors.reset} `);
     if (raw.trim() === '0') {
       rl.close();
-      return startConnect();
+      return startConnect(false);
     }
     phone = raw.replace(/\D/g, '');
     rl.close();
@@ -189,7 +189,7 @@ async function conectarNovoNumero() {
 
   if (phone.length < 10) {
     console.log(`${colors.red}❌ Número inválido. O bot vai reiniciar.${colors.reset}`);
-    setTimeout(() => startConnect(), 3000);
+    setTimeout(() => startConnect(false), 3000);
     return;
   }
 
@@ -251,19 +251,28 @@ function configurarListeners(client) {
     if (connection === 'close') {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       
-      // Se foi deslogado (401) ou deu timeout esperando o código (408)
-      if (statusCode === DisconnectReason.loggedOut || statusCode === DisconnectReason.timedOut || statusCode === 401 || statusCode === 408) {
-        console.log(`\n${colors.red}❌ SESSÃO EXPIRADA OU DESCONECTADA.${colors.reset}`);
-        console.log(`${colors.yellow}Apagando a pasta session e pedindo o número novamente...${colors.reset}`);
+      // 🚨 SE FOR BANIDO (403), DESLOGADO (401) OU SESSÃO INVÁLIDA
+      if (
+        statusCode === DisconnectReason.loggedOut || 
+        statusCode === 401 || 
+        statusCode === 403 || 
+        statusCode === DisconnectReason.badSession
+      ) {
+        console.log(`\n${colors.red}❌ SESSÃO EXPIRADA, DESLOGADA OU BANIDA.${colors.reset}`);
+        console.log(`${colors.yellow}Apagando a pasta session... O bot pedirá um novo número.${colors.reset}`);
         
         if (fs.existsSync('./session')) {
           fs.rmSync('./session', { recursive: true, force: true });
         }
         
-        setTimeout(() => startConnect(), 3000);
-      } else {
-        console.log(`${colors.yellow}🔄 Conexão caiu (Motivo: ${statusCode || 'Desconhecido'}). Reconectando...${colors.reset}`);
-        setTimeout(() => startConnect(), 3000);
+        // Passa 'false' para forçar o menu a aparecer de novo
+        setTimeout(() => startConnect(false), 3000);
+      } 
+      // 🔄 SE FOR APENAS QUEDA DE INTERNET/CONEXÃO
+      else {
+        console.log(`${colors.yellow}🔄 Conexão caiu (Motivo: ${statusCode || 'Instabilidade'}). Reconectando automaticamente na mesma sessão...${colors.reset}`);
+        // Passa 'true' para reconectar silenciosamente sem pedir número
+        setTimeout(() => startConnect(true), 3000);
       }
     }
   });
@@ -375,7 +384,8 @@ async function configurarAntiCall(client) {
 // =========================================
 // FUNÇÃO PRINCIPAL DE CONEXÃO
 // =========================================
-async function startConnect() {
+// O parâmetro `isReconnect` diz se o bot está reiniciando por queda de rede (true) ou ligando do zero (false)
+async function startConnect(isReconnect = false) {
   if (process.argv.includes('atualizar')) {
     console.log(`${colors.yellow}🔄 Iniciando atualização via terminal...${colors.reset}`);
     const { atualizarBot } = await import('./update.js');
@@ -384,9 +394,12 @@ async function startConnect() {
     process.exit(res.sucesso ? 0 : 1);
   }
 
-  await corrigirSharpInterno();
-  await verificarFFmpeg(); 
-  await verificarDependencias(); 
+  // Se for reconexão automática, ele pula as verificações pesadas para ser mais rápido
+  if (!isReconnect) {
+    await corrigirSharpInterno();
+    await verificarFFmpeg(); 
+    await verificarDependencias(); 
+  }
 
   const sessionPath = './session';
   const sessionExists = fs.existsSync(sessionPath) && fs.readdirSync(sessionPath).length > 0;
@@ -394,6 +407,14 @@ async function startConnect() {
   if (sessionExists) {
     const numeroAntigo = obterNumeroAntigo();
     if (numeroAntigo) {
+      // ⚡ SE FOR RECONEXÃO AUTOMÁTICA, ELE NÃO PERGUNTA NADA, SÓ CONECTA!
+      if (isReconnect) {
+        console.log(`\n${colors.green}🔄 Reconectando silenciosamente ao número +${numeroAntigo}...${colors.reset}`);
+        await conectarSessaoExistente();
+        return;
+      }
+
+      // Se o bot foi ligado do zero e já tem sessão, pergunta se quer reconectar
       const rl = readline.createInterface({ input, output });
       console.log(`\n${colors.cyan}=========================================${colors.reset}`);
       console.log(`${colors.yellow}🔍 SESSÃO ENCONTRADA!${colors.reset}`);
@@ -421,7 +442,8 @@ async function startConnect() {
     }
   }
 
+  // Se não tem sessão nenhuma, vai direto para a tela de pedir o número
   await conectarNovoNumero();
 }
 
-startConnect().catch(console.error);
+startConnect(false).catch(console.error);
