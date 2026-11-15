@@ -41,7 +41,7 @@ import { getCustomCommand } from './functions/customCommandsDB.js';
 // =========================================
 // IMPORTS DE COMANDOS
 // =========================================
-import { executeMenu, executeMenuAdmin, executeMenuRPG, executeMenuBaixar, executeMenuMembros, executeMenuReligioso, executeMenuCatolico, executeMenuVIP, executeMenuPokemon } from './commands/menu.js';
+import { executeMenu, executeMenuAdmin, executeMenuRPG, executeMenuBaixar, executeMenuMembros, executeMenuReligioso, executeMenuCatolico, executeMenuVIP, executeMenuPokemon, executeMenuBotoes, executeMenuLista } from './commands/menu.js';
 import { executeMenuGame, executeDaily } from './commands/game.js';
 import { executeMenuOwner, executeSay, executeReiniciar, executeBotOff, executeBotOn, executeNickDono, executeFotoMenu, executeAddCoins, executeRmCoins, executeSetRecado, isBotRestrito, executeSetNomeIAGlobal } from './commands/owner.js';
 import { executeDefinirCmdFoto, executeRmCmdFoto, executeChannel, executeRmChannel } from './commands/owner_extras.js';
@@ -142,14 +142,21 @@ function getTipoMensagem(msg) {
 
 async function chamarGemini(prompt, systemInstruction = '') {
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
     const body = { contents: [{ parts: [{ text: prompt }] }] };
     if (systemInstruction) body.systemInstruction = { parts: [{ text: systemInstruction }] };
     const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json();
-    if (!res.ok) return null;
+    
+    if (!res.ok) {
+      console.log(`[GEMINI ERRO] Status: ${res.status} | Mensagem: ${data.error?.message}`);
+      return null;
+    }
     return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
-  } catch (e) { return null; }
+  } catch (e) { 
+    console.log('[GEMINI ERRO] Falha na requisição:', e.message);
+    return null; 
+  }
 }
 
 // =========================================
@@ -157,6 +164,21 @@ async function chamarGemini(prompt, systemInstruction = '') {
 // =========================================
 export async function handleMessage(client, msg) {
   let body = getText(msg).trim();
+
+  // 🕹️ LÓGICA PARA LER BOTÕES E LISTAS CLICADOS
+  if (msg.message?.buttonsResponseMessage) {
+    body = msg.message.buttonsResponseMessage.selectedButtonId;
+  } else if (msg.message?.listResponseMessage) {
+    body = msg.message.listResponseMessage.singleSelectReply.selectedRowId;
+  } else if (msg.message?.templateButtonReplyMessage) {
+    body = msg.message.templateButtonReplyMessage.selectedId;
+  }
+
+  // Se a pessoa clicou num botão, adicionamos o prefixo para o bot achar o comando
+  if (body && !body.startsWith(PREFIX) && (msg.message?.buttonsResponseMessage || msg.message?.listResponseMessage || msg.message?.templateButtonReplyMessage)) {
+    body = PREFIX + body;
+  }
+
   let bodyLower = body.toLowerCase();
 
   const jid = msg.key.remoteJid;
@@ -329,10 +351,9 @@ export async function handleMessage(client, msg) {
       agora: Date.now(), rng: Math.random
     });
 
-    if (resIA.tratada) return; // Se a IA respondeu ou está processando, o fluxo para aqui.
+    if (resIA.tratada) return; 
 
     if (resIA.comando) {
-      // Se for Modo 2 e a IA traduziu para um comando, o bot assume aquele comando!
       body = resIA.comando;
       bodyLower = body.toLowerCase();
     }
@@ -398,14 +419,10 @@ export async function handleMessage(client, msg) {
 
   if (isVIPCommand(command) && !isVIP(sender) && !ehDono) return reply('❌ Este comando é exclusivo para usuários *VIP*!');
 
-  // =========================================
-  // 🕵️ BLOQUEIO DE COMANDOS PERSONALIZADOS
-  // =========================================
   const customResponse = getCustomCommand(command);
   if (customResponse) {
     return reply(customResponse);
   }
-  // =========================================
 
   switch (command) {
     // ================= POKÉMON =================
@@ -494,6 +511,8 @@ export async function handleMessage(client, msg) {
       else if (args[0] === 'dono') await executeMenuOwner(ctx);
       else await executeMenu(ctx);
       break;
+    case 'menubotoes': await executeMenuBotoes(ctx); break;
+    case 'menulista': case 'menu2': await executeMenuLista(ctx); break;
     case 'menuadmin': await executeMenuAdmin(ctx); break;
     case 'menugame': await executeMenuGame(ctx); break;
     case 'menurg': await executeMenuRPG(ctx); break;
@@ -779,7 +798,7 @@ export async function handleMessage(client, msg) {
     case 'bispo': case 'bispo-brasil': await executeBispo(ctx); break;
     case 'padre': await executePadre(ctx); break;
     case 'santododia': await executeSantoDoDia(ctx); break;
-    default: break; // Se não for comando nativo e não for customizado, ignora
+    default: break; 
   }
 
   if (fotoExiste && ultimoTextoEnviado) {
