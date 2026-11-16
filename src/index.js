@@ -2,21 +2,6 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import { areJidsSameUser } from '@whiskeysockets/baileys'; 
 
-// =========================================
-// 🚀 AUTO-INSTALADOR DE BOTÕES (gifted-btns)
-// =========================================
-try {
-    await import('gifted-btns');
-} catch (e) {
-    console.log('⚙️ [AUTO-INSTALAR] O pacote "gifted-btns" não foi encontrado. Instalando automaticamente, aguarde...');
-    try {
-        execSync('npm install gifted-btns', { stdio: 'inherit' });
-        console.log('✅ [AUTO-INSTALAR] "gifted-btns" instalado com sucesso!');
-    } catch (err) {
-        console.error('❌ [AUTO-INSTALAR] Falha ao instalar "gifted-btns". Instale manualmente com: npm install gifted-btns');
-    }
-}
-
 import { PREFIX, BOT_NAME, GRUPO_SUPORTE, GEMINI_API_KEY } from './config.js';
 import { getText, createReply } from './functions/helpers.js';
 import { isOwner, isAdmin, getRealSender } from './functions/permissions.js';
@@ -33,6 +18,10 @@ import { estaEmHorarioOff } from './functions/horarioOff.js';
 import { estaAtiva, registrarLeitura } from './functions/autoLeitura.js';
 import { isAntiPVAtivo } from './functions/antipv.js';
 import { isVIP, isVIPCommand } from './functions/vipDB.js';
+
+// 🕹️ IMPORTAÇÃO DO NOVO SISTEMA DE BOTÕES
+import { getRespostaBotao } from './functions/botoes.js';
+import { executeMenuBotoes, executePing } from './commands/menuBotoes.js';
 
 // SISTEMA ANTI-PAYMENT
 import { hasPaymentMessage, defendAgainstPayment } from './functions/paymentDefense.js';
@@ -58,7 +47,7 @@ import { getCustomCommand } from './functions/customCommandsDB.js';
 // =========================================
 // IMPORTS DE COMANDOS
 // =========================================
-import { executeMenu, executeMenuAdmin, executeMenuRPG, executeMenuBaixar, executeMenuMembros, executeMenuReligioso, executeMenuCatolico, executeMenuVIP, executeMenuPokemon, executeMenuBotoes, executeMenuLista } from './commands/menu.js';
+import { executeMenu, executeMenuAdmin, executeMenuRPG, executeMenuBaixar, executeMenuMembros, executeMenuReligioso, executeMenuCatolico, executeMenuVIP, executeMenuPokemon, executeMenuLista } from './commands/menu.js';
 import { executeMenuGame, executeDaily } from './commands/game.js';
 import { executeMenuOwner, executeSay, executeReiniciar, executeBotOff, executeBotOn, executeNickDono, executeFotoMenu, executeAddCoins, executeRmCoins, executeSetRecado, isBotRestrito, executeSetNomeIAGlobal } from './commands/owner.js';
 import { executeDefinirCmdFoto, executeRmCmdFoto, executeChannel, executeRmChannel } from './commands/owner_extras.js';
@@ -182,26 +171,15 @@ async function chamarGemini(prompt, systemInstruction = '') {
 export async function handleMessage(client, msg) {
   let body = getText(msg).trim();
 
-  // 🕹️ LÓGICA PARA LER BOTÕES E LISTAS CLICADOS
-  if (msg.message?.buttonsResponseMessage) {
-    body = msg.message.buttonsResponseMessage.selectedButtonId;
-  } else if (msg.message?.listResponseMessage) {
-    body = msg.message.listResponseMessage.singleSelectReply.selectedRowId;
-  } else if (msg.message?.templateButtonReplyMessage) {
-    body = msg.message.templateButtonReplyMessage.selectedId;
-  } else if (msg.message?.interactiveResponseMessage) {
-    // 👇 AQUI LÊ OS BOTÕES INTERATIVOS (single_select)
-    try {
-      const params = JSON.parse(msg.message.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson);
-      body = params.id;
-    } catch (e) {
-      console.log("[ERRO] Falha ao ler botão interativo:", e);
-    }
+  // 🕹️ LÊ OS BOTÕES USANDO O NOVO ARQUIVO botoes.js
+  const respostaBotao = getRespostaBotao(msg);
+  if (respostaBotao) {
+    body = respostaBotao;
   }
 
-  // Se a pessoa clicou num botão, garante que tem o prefixo (!, /, etc)
-  if (body && !body.startsWith(PREFIX) && (msg.message?.buttonsResponseMessage || msg.message?.listResponseMessage || msg.message?.templateButtonReplyMessage || msg.message?.interactiveResponseMessage)) {
-    body = PREFIX + body;
+  // Garante que se a pessoa clicou num botão, ele tenha o prefixo
+  if (body && !body.startsWith(PREFIX) && respostaBotao) {
+    body = PREFIX + body.replace(PREFIX, ''); // Evita duplicar o prefixo se já vier nele
   }
 
   let bodyLower = body.toLowerCase();
@@ -238,7 +216,7 @@ export async function handleMessage(client, msg) {
           userLid: sender,
           messageKey: msg.key
         });
-        return; // Para o processamento da mensagem
+        return; 
       }
     }
   }
@@ -368,7 +346,7 @@ export async function handleMessage(client, msg) {
   }
 
   // =========================================
-  // 🧠 SISTEMA DE IA DO GRUPO (NOVO)
+  // 🧠 SISTEMA DE IA DO GRUPO
   // =========================================
   if (isGroup && !body.startsWith(PREFIX)) {
     const resIA = await processarIAGrupo({
@@ -536,7 +514,12 @@ export async function handleMessage(client, msg) {
       else if (args[0] === 'dono') await executeMenuOwner(ctx);
       else await executeMenu(ctx);
       break;
-    case 'menubotoes': await executeMenuBotoes(ctx); break;
+      
+    // 🕹️ NOVO SISTEMA DE MENU COM BOTÕES AQUI
+    case 'menubotoes': await executeMenuBotoes(ctx, executeMenu); break;
+    case 'menutexto': await executeMenu(ctx); break;
+    case 'ping': await executePing(ctx); break;
+    
     case 'menulista': case 'menu2': await executeMenuLista(ctx); break;
     case 'menuadmin': await executeMenuAdmin(ctx); break;
     case 'menugame': await executeMenuGame(ctx); break;
@@ -598,7 +581,6 @@ export async function handleMessage(client, msg) {
     case 'addcmd': await executeAddCmd(ctx); break;
     case 'delcmd': await executeDelCmd(ctx); break;
     
-    // === NOVO COMANDO DE ATUALIZAR BOT AQUI ===
     case 'atualizarbot': 
       if (!ehDono) return reply('❌ Apenas o dono do bot pode usar este comando.');
       await reply('🔄 *Iniciando atualização...*\nBuscando mudanças no GitHub. Por favor, aguarde alguns segundos.');
@@ -836,4 +818,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-  }
+        }
