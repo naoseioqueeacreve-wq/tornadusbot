@@ -4,6 +4,9 @@ import { getVIPCommands, isVIP, getVipExpiracao } from '../functions/vipDB.js';
 import { getReligiao } from '../functions/religiaoDB.js';
 import fs from 'node:fs';
 
+// 🔥 IMPORTAÇÃO DO NOVO SISTEMA DE BOTÕES
+import { sendButtons } from 'gifted-btns';
+
 // =========================================
 // FUNÇÃO AUXILIAR
 // =========================================
@@ -609,10 +612,10 @@ export async function executeMenuBaixar(ctx) {
 }
 
 // =========================================
-// MENU COM BOTÕES RÁPIDOS
+// 🔥 MENU COM BOTÕES RÁPIDOS (CORRIGIDO COM GIFTED-BTNS)
 // =========================================
 export async function executeMenuBotoes(ctx) {
-  const { client, msg, pushName } = ctx;
+  const { client, msg, pushName, jid } = ctx;
 
   const texto = `⚡ *PIKACHU BOT* 🍃\n\n` +
     `👤 *USUARIO:* ${pushName}\n` +
@@ -620,22 +623,20 @@ export async function executeMenuBotoes(ctx) {
     `🎒 Escolha uma opção abaixo:`;
 
   try {
-    await client.sendMessage(msg.key.remoteJid, {
+    await sendButtons(client, jid, {
+      title: '⚡ PIKACHU BOT',
       text: texto,
       footer: "© Pikachu Bot",
       buttons: [
         { 
-          buttonId: 'menu', 
-          buttonText: { displayText: '⚡ MENU PRINCIPAL' }, 
-          type: 1 
+          id: 'menu', 
+          text: '⚡ MENU PRINCIPAL' 
         },
         { 
-          buttonId: 'ping', 
-          buttonText: { displayText: '📍 PING' }, 
-          type: 1 
+          id: 'ping', 
+          text: '📍 PING' 
         }
-      ],
-      headerType: 1
+      ]
     }, { quoted: msg });
   } catch (error) {
     console.error('[MENU BOTOES] Erro:', error);
@@ -644,10 +645,10 @@ export async function executeMenuBotoes(ctx) {
 }
 
 // =========================================
-// MENU EM LISTA (BOTÕES INTERATIVOS)
+// 🔥 MENU EM LISTA (CORRIGIDO COM GIFTED-BTNS)
 // =========================================
 export async function executeMenuLista(ctx) {
-  const { client, msg, pushName } = ctx;
+  const { client, msg, pushName, jid } = ctx;
   const prefixo = PREFIX;
 
   const texto = `⚡ *PIKACHU BOT* 🍃\n\n` +
@@ -719,10 +720,11 @@ export async function executeMenuLista(ctx) {
   ];
 
   try {
-    await client.sendMessage(msg.key.remoteJid, {
+    await sendButtons(client, jid, {
       text: texto,
       footer: "© Pikachu Bot",
-      interactiveButtons: [
+      mentions: [msg.key.participant || msg.key.remoteJid],
+      buttons: [
         {
           name: "single_select",
           buttonParamsJson: JSON.stringify({
@@ -730,11 +732,10 @@ export async function executeMenuLista(ctx) {
             sections: sections
           })
         }
-      ],
-      mentions: [msg.key.participant || msg.key.remoteJid]
+      ]
     }, { quoted: msg });
   } catch (error) {
     console.error('[MENU LISTA] Erro:', error);
     return ctx.reply('❌ Seu WhatsApp não suporta listas. Use !menu.');
   }
-          }
+                                                          }
