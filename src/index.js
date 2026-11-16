@@ -1,5 +1,22 @@
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import { areJidsSameUser } from '@whiskeysockets/baileys'; 
+
+// =========================================
+// 🚀 AUTO-INSTALADOR DE BOTÕES (gifted-btns)
+// =========================================
+try {
+    await import('gifted-btns');
+} catch (e) {
+    console.log('⚙️ [AUTO-INSTALAR] O pacote "gifted-btns" não foi encontrado. Instalando automaticamente, aguarde...');
+    try {
+        execSync('npm install gifted-btns', { stdio: 'inherit' });
+        console.log('✅ [AUTO-INSTALAR] "gifted-btns" instalado com sucesso!');
+    } catch (err) {
+        console.error('❌ [AUTO-INSTALAR] Falha ao instalar "gifted-btns". Instale manualmente com: npm install gifted-btns');
+    }
+}
+
 import { PREFIX, BOT_NAME, GRUPO_SUPORTE, GEMINI_API_KEY } from './config.js';
 import { getText, createReply } from './functions/helpers.js';
 import { isOwner, isAdmin, getRealSender } from './functions/permissions.js';
