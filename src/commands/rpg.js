@@ -23,7 +23,6 @@ import { enviarBotoes, botaoResposta } from '../functions/botoes.js';
 // 🎲 FUNÇÃO PARA GERAR BOTÕES DE COMANDOS ALEATÓRIOS
 // =========================================
 function gerarBotoesComandosRPG(comandoAtual) {
-  // Lista filtrada: apenas comandos que NÃO precisam de menção ou número
   const comandosDisponiveis = [
     { id: 'trabalhar', text: '💼 TRABALHAR' },
     { id: 'banco', text: '🏦 BANCO' },
@@ -35,10 +34,7 @@ function gerarBotoesComandosRPG(comandoAtual) {
     { id: 'inventario', text: '🎒 INVENTÁRIO' }
   ];
 
-  // Remove o comando atual para não aparecer o mesmo
   const filtrados = comandosDisponiveis.filter(c => c.id !== comandoAtual);
-  
-  // Embaralha e pega 2
   const sorteados = filtrados.sort(() => 0.5 - Math.random()).slice(0, 2);
   
   return sorteados.map(c => botaoResposta(c.text, `${PREFIX}${c.id}`));
@@ -211,7 +207,6 @@ export async function executeApostar(ctx) {
 
   const valor = parseInt(q.trim());
 
-  // Se a pessoa não digitou o valor, mostra os botões
   if (!valor || valor <= 0) {
     const botoes = [
       botaoResposta('💸 100 coins', `${PREFIX}apostar 100`),
@@ -235,7 +230,8 @@ export async function executeApostar(ctx) {
 
   if (valor > user.coins) return reply(`❌ Você não tem ${valor} coins. Saldo: ${user.coins}`);
 
-  const ganhou = Math.random() < 0.45;
+  // CHANCE DE ACERTO: 25%
+  const ganhou = Math.random() < 0.25;
 
   if (ganhou) {
     user.coins += valor;
@@ -257,7 +253,6 @@ export async function executeInvestir(ctx) {
 
   const valor = parseInt(q.trim());
 
-  // Se a pessoa não digitou o valor, mostra os botões
   if (!valor || valor <= 0) {
     const botoes = [
       botaoResposta('📈 100 coins', `${PREFIX}investir 100`),
@@ -282,7 +277,9 @@ export async function executeInvestir(ctx) {
   if (valor > user.coins) return reply(`❌ Saldo insuficiente. Você tem ${user.coins}.`);
 
   user.coins -= valor;
-  const lucro = Math.random() < 0.6 ? valor * 2 : 0;
+  
+  // CHANCE DE ACERTO: 35%
+  const lucro = Math.random() < 0.35 ? valor * 2 : 0;
 
   if (lucro > 0) {
     user.coins += lucro;
@@ -748,4 +745,4 @@ export async function executeCasas(ctx) {
   } catch {
     return reply(texto);
   }
-                                             }
+  }
