@@ -16,11 +16,39 @@ import {
   PETS
 } from '../functions/rpgJobs.js';
 
+// 🕹️ IMPORTAÇÃO DO SISTEMA DE BOTÕES
+import { enviarBotoes, botaoResposta } from '../functions/botoes.js';
+
+// =========================================
+// 🎲 FUNÇÃO PARA GERAR BOTÕES DE COMANDOS ALEATÓRIOS
+// =========================================
+function gerarBotoesComandosRPG(comandoAtual) {
+  // Lista filtrada: apenas comandos que NÃO precisam de menção ou número
+  const comandosDisponiveis = [
+    { id: 'trabalhar', text: '💼 TRABALHAR' },
+    { id: 'banco', text: '🏦 BANCO' },
+    { id: 'empregos', text: '📋 EMPREGOS' },
+    { id: 'perfilrpg', text: '👤 PERFIL' },
+    { id: 'pets', text: '🐾 PETS' },
+    { id: 'casas', text: '🏠 CASAS' },
+    { id: 'explorar', text: '🗺️ EXPLORAR' },
+    { id: 'inventario', text: '🎒 INVENTÁRIO' }
+  ];
+
+  // Remove o comando atual para não aparecer o mesmo
+  const filtrados = comandosDisponiveis.filter(c => c.id !== comandoAtual);
+  
+  // Embaralha e pega 2
+  const sorteados = filtrados.sort(() => 0.5 - Math.random()).slice(0, 2);
+  
+  return sorteados.map(c => botaoResposta(c.text, `${PREFIX}${c.id}`));
+}
+
 // =========================================
 // !perfilrpg
 // =========================================
 export async function executePerfil(ctx) {
-  const { client, msg, sender, pushName } = ctx;
+  const { client, msg, sender, pushName, jid } = ctx;
   const user = getUsuario(sender);
 
   const casa = CASAS[user.casa] || CASAS.barraco;
@@ -50,13 +78,17 @@ export async function executePerfil(ctx) {
     `┃\n` +
     `╰━━━━━━━━━━━━━━━━━━━━╯`;
 
+  const botoes = gerarBotoesComandosRPG('perfilrpg');
+
   try {
-    return await client.sendMessage(msg.key.remoteJid, {
-      image: { url: casa.foto },
-      caption: texto
-    }, { quoted: msg });
-  } catch {
-    return client.sendMessage(msg.key.remoteJid, { text: texto }, { quoted: msg });
+    await enviarBotoes(client, jid, {
+      corpo: texto,
+      rodape: '© Pikachu Bot',
+      mencoes: [sender],
+      botoes: botoes
+    }, msg);
+  } catch (e) {
+    return client.sendMessage(jid, { text: texto, mentions: [sender] }, { quoted: msg });
   }
 }
 
@@ -64,7 +96,7 @@ export async function executePerfil(ctx) {
 // !trabalhar
 // =========================================
 export async function executeTrabalhar(ctx) {
-  const { client, msg, sender, pushName, reply } = ctx;
+  const { client, msg, sender, pushName, reply, jid } = ctx;
   const user = getUsuario(sender);
 
   const agora = Date.now();
@@ -109,13 +141,21 @@ export async function executeTrabalhar(ctx) {
     `📊 Progresso: ${user.trabalhosFeitos}/${cargo.trabalhosNecessarios}` +
     textoExtra;
 
+  const botoes = gerarBotoesComandosRPG('trabalhar');
+
   try {
-    return await client.sendMessage(msg.key.remoteJid, {
-      image: { url: foto },
-      caption: texto
-    }, { quoted: msg });
+    await enviarBotoes(client, jid, {
+      corpo: texto,
+      rodape: '© Pikachu Bot',
+      mencoes: [sender],
+      botoes: botoes
+    }, msg);
   } catch {
-    return reply(texto);
+    try {
+      return await client.sendMessage(jid, { image: { url: foto }, caption: texto }, { quoted: msg });
+    } catch {
+      return reply(texto);
+    }
   }
 }
 
@@ -123,7 +163,7 @@ export async function executeTrabalhar(ctx) {
 // !empregos
 // =========================================
 export async function executeEmpregos(ctx) {
-  const { client, msg, sender, reply } = ctx;
+  const { client, msg, sender, reply, jid } = ctx;
   const user = getUsuario(sender);
   const cargoAtual = getCargo(user.nivelEmprego || 1);
 
@@ -144,13 +184,21 @@ export async function executeEmpregos(ctx) {
 
   texto += `💡 Use: ${PREFIX}trabalhar (cooldown de 1 hora)`;
 
+  const botoes = gerarBotoesComandosRPG('empregos');
+
   try {
-    return await client.sendMessage(msg.key.remoteJid, {
-      image: { url: FOTOS_CARGOS[1] },
-      caption: texto
-    }, { quoted: msg });
+    await enviarBotoes(client, jid, {
+      corpo: texto,
+      rodape: '© Pikachu Bot',
+      mencoes: [sender],
+      botoes: botoes
+    }, msg);
   } catch {
-    return reply(texto);
+    try {
+      return await client.sendMessage(jid, { image: { url: FOTOS_CARGOS[1] }, caption: texto }, { quoted: msg });
+    } catch {
+      return reply(texto);
+    }
   }
 }
 
@@ -158,11 +206,33 @@ export async function executeEmpregos(ctx) {
 // !apostar <valor>
 // =========================================
 export async function executeApostar(ctx) {
-  const { reply, sender, q } = ctx;
+  const { reply, sender, q, client, jid, msg } = ctx;
   const user = getUsuario(sender);
 
   const valor = parseInt(q.trim());
-  if (!valor || valor <= 0) return reply(`❌ Use: ${PREFIX}apostar <valor>`);
+
+  // Se a pessoa não digitou o valor, mostra os botões
+  if (!valor || valor <= 0) {
+    const botoes = [
+      botaoResposta('💸 100 coins', `${PREFIX}apostar 100`),
+      botaoResposta('💸 250 coins', `${PREFIX}apostar 250`),
+      botaoResposta('💸 500 coins', `${PREFIX}apostar 500`),
+      botaoResposta('💸 1000 coins', `${PREFIX}apostar 1000`)
+    ];
+    
+    const texto = `🎰 *APOSTAR*\n\nEscolha um valor para apostar (limite 1000):\n💼 Seu saldo: *${user.coins.toLocaleString('pt-BR')}* coins`;
+
+    try {
+      return await enviarBotoes(client, jid, {
+        corpo: texto,
+        rodape: '© Pikachu Bot',
+        botoes: botoes
+      }, msg);
+    } catch {
+      return reply(`❌ Use: ${PREFIX}apostar <valor>`);
+    }
+  }
+
   if (valor > user.coins) return reply(`❌ Você não tem ${valor} coins. Saldo: ${user.coins}`);
 
   const ganhou = Math.random() < 0.45;
@@ -182,11 +252,33 @@ export async function executeApostar(ctx) {
 // !investir <valor>
 // =========================================
 export async function executeInvestir(ctx) {
-  const { reply, sender, q } = ctx;
+  const { reply, sender, q, client, jid, msg } = ctx;
   const user = getUsuario(sender);
 
   const valor = parseInt(q.trim());
-  if (!valor || valor <= 0) return reply(`❌ Use: ${PREFIX}investir <valor>`);
+
+  // Se a pessoa não digitou o valor, mostra os botões
+  if (!valor || valor <= 0) {
+    const botoes = [
+      botaoResposta('📈 100 coins', `${PREFIX}investir 100`),
+      botaoResposta('📈 250 coins', `${PREFIX}investir 250`),
+      botaoResposta('📈 500 coins', `${PREFIX}investir 500`),
+      botaoResposta('📈 1000 coins', `${PREFIX}investir 1000`)
+    ];
+    
+    const texto = `📈 *INVESTIR*\n\nEscolha um valor para investir (limite 1000):\n💼 Seu saldo: *${user.coins.toLocaleString('pt-BR')}* coins`;
+
+    try {
+      return await enviarBotoes(client, jid, {
+        corpo: texto,
+        rodape: '© Pikachu Bot',
+        botoes: botoes
+      }, msg);
+    } catch {
+      return reply(`❌ Use: ${PREFIX}investir <valor>`);
+    }
+  }
+
   if (valor > user.coins) return reply(`❌ Saldo insuficiente. Você tem ${user.coins}.`);
 
   user.coins -= valor;
@@ -253,20 +345,14 @@ function ehTelefone(jid) {
   return typeof jid === 'string' && jid.endsWith('@s.whatsapp.net');
 }
 
-// Descobre em qual CONTA está quem foi marcado.
-// O bot guarda as contas pelo telefone (…@s.whatsapp.net), mas em grupos com LID a
-// marcação chega como "…@lid". Usar o LID como chave fazia o pix cair numa conta
-// nova (fantasma) e quem deveria receber ficava sem os coins.
-// Retorna a chave da conta ou null se não der para identificar a pessoa.
 async function resolverContaMarcada(ctx, mencionado) {
   const { client, msg, groupMetadata } = ctx;
   const digitos = soDigitos(mencionado);
-  const candidatos = []; // da mais provável para a menos provável
+  const candidatos = [];
 
   if (ehTelefone(mencionado)) {
     candidatos.push(`${digitos}@s.whatsapp.net`);
   } else {
-    // Marcação em LID: acha o telefone na lista de participantes do grupo
     const procurar = meta => meta?.participants?.find(p =>
       [p.id, p.lid, p.phoneNumber, p.participantAlt, p.jid].some(x => x && soDigitos(x) === digitos)
     );
@@ -280,11 +366,8 @@ async function resolverContaMarcada(ctx, mencionado) {
     if (tel) candidatos.push(`${soDigitos(tel)}@s.whatsapp.net`);
   }
 
-  // Por último, a chave da própria marcação (contas antigas guardadas assim)
   candidatos.push(mencionado);
 
-  // Usa a primeira conta que já existe; se nenhuma existe, só cria uma nova
-  // quando o telefone da pessoa é conhecido (nunca uma conta com chave LID).
   const db = lerDB();
   const existente = candidatos.find(c => db.usuarios[c]);
   if (existente) return existente;
@@ -303,7 +386,7 @@ export async function executePix(ctx) {
     );
   }
 
-  const alvo = mentions[0]; // como veio na marcação (serve para marcar a pessoa na mensagem)
+  const alvo = mentions[0];
 
   const partes = q.trim().split(/\s+/);
   const valor = parseInt(partes[partes.length - 1]);
@@ -314,7 +397,6 @@ export async function executePix(ctx) {
 
   if (valor < 10) return reply('💸 Valor mínimo: 10 coins');
 
-  // 🔎 Conta de quem vai receber
   const contaAlvo = await resolverContaMarcada(ctx, alvo);
   if (!contaAlvo) {
     return reply(
@@ -333,7 +415,6 @@ export async function executePix(ctx) {
     return reply('❌ Você não pode enviar pix para o bot!');
   }
 
-  // 💰 Confere o saldo antes de criar qualquer conta
   const saldoRemetente = getUsuario(sender).coins;
   if (saldoRemetente < valor) {
     return reply(
@@ -343,8 +424,7 @@ export async function executePix(ctx) {
     );
   }
 
-  // 💸 Transfere: tira de um e soma no outro, salvando tudo de uma vez
-  getUsuario(contaAlvo); // garante que a conta de quem recebe existe (completa)
+  getUsuario(contaAlvo);
   const r = transferirCoins(sender, contaAlvo, valor);
   if (!r.ok) {
     return reply(
@@ -357,17 +437,14 @@ export async function executePix(ctx) {
   const saldoNovoRemetente = r.saldoDe;
   const saldoNovoDestinatario = r.saldoPara;
 
-  const tagAlvo = soDigitos(alvo);          // texto do "@" (precisa bater com a marcação)
-  const numeroAlvo = soDigitos(contaAlvo);  // telefone mostrado no comprovante
+  const tagAlvo = soDigitos(alvo);
+  const numeroAlvo = soDigitos(contaAlvo);
 
   const idTransacao = `PIX${Date.now().toString().slice(-10)}`;
   const agora = new Date();
   const dataFormatada = agora.toLocaleDateString('pt-BR');
   const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-  // =========================================
-  // NOVO DESIGN DO COMPROVANTE (REMETENTE)
-  // =========================================
   const comprovante =
     `┌───〔 💸 *COMPROVANTE PIX* 〕\n` +
     `│\n` +
@@ -389,11 +466,7 @@ export async function executePix(ctx) {
     `│\n` +
     `└───〔 ✅ *TRANSFERÊNCIA REALIZADA* 〕`;
 
-  // 🔔 NOTIFICA O DESTINATÁRIO
   try {
-    // =========================================
-    // NOVO DESIGN DO COMPROVANTE (DESTINATÁRIO)
-    // =========================================
     const comprovanteDestinatario =
       `┌───〔 🎉 *PIX RECEBIDO!* 〕\n` +
       `│\n` +
@@ -426,7 +499,7 @@ export async function executePix(ctx) {
 // !banco depositar/sacar
 // =========================================
 export async function executeBanco(ctx) {
-  const { reply, sender, q } = ctx;
+  const { client, msg, sender, reply, q, jid } = ctx;
   const user = getUsuario(sender);
 
   const partes = q.trim().split(/\s+/);
@@ -441,7 +514,18 @@ export async function executeBanco(ctx) {
     user.coins -= valor;
     user.banco += valor;
     salvarUsuario(sender, user);
-    return reply(`🏦 *DEPÓSITO*\n\n💰 Depositado: ${valor}\n🏦 Banco: ${user.banco}/5000`);
+    
+    const botoes = gerarBotoesComandosRPG('banco');
+    try {
+      await enviarBotoes(client, jid, {
+        corpo: `🏦 *DEPÓSITO*\n\n💰 Depositado: ${valor}\n🏦 Banco: ${user.banco}/5000`,
+        rodape: '© Pikachu Bot',
+        botoes: botoes
+      }, msg);
+    } catch {
+      return reply(`🏦 *DEPÓSITO*\n\n💰 Depositado: ${valor}\n🏦 Banco: ${user.banco}/5000`);
+    }
+    return;
   }
 
   if (acao === 'sacar') {
@@ -451,17 +535,38 @@ export async function executeBanco(ctx) {
     user.banco -= valor;
     user.coins += valor;
     salvarUsuario(sender, user);
-    return reply(`🏦 *SAQUE*\n\n💰 Sacado: ${valor}\n🏦 Banco: ${user.banco}/5000`);
+
+    const botoes = gerarBotoesComandosRPG('banco');
+    try {
+      await enviarBotoes(client, jid, {
+        corpo: `🏦 *SAQUE*\n\n💰 Sacado: ${valor}\n🏦 Banco: ${user.banco}/5000`,
+        rodape: '© Pikachu Bot',
+        botoes: botoes
+      }, msg);
+    } catch {
+      return reply(`🏦 *SAQUE*\n\n💰 Sacado: ${valor}\n🏦 Banco: ${user.banco}/5000`);
+    }
+    return;
   }
 
-  return reply(
+  const textoMenu = 
     `🏦 *BANCO*\n\n` +
     `💰 Carteira: ${user.coins}\n` +
     `🏦 Banco: ${user.banco}/5000\n\n` +
     `Comandos:\n` +
     `• ${PREFIX}banco depositar <valor>\n` +
-    `• ${PREFIX}banco sacar <valor>`
-  );
+    `• ${PREFIX}banco sacar <valor>`;
+
+  const botoes = gerarBotoesComandosRPG('banco');
+  try {
+    await enviarBotoes(client, jid, {
+      corpo: textoMenu,
+      rodape: '© Pikachu Bot',
+      botoes: botoes
+    }, msg);
+  } catch {
+    return reply(textoMenu);
+  }
 }
 
 // =========================================
@@ -504,10 +609,10 @@ export async function executeAdotar(ctx) {
 // !pets
 // =========================================
 export async function executePets(ctx) {
-  const { reply, sender } = ctx;
+  const { client, msg, sender, jid } = ctx;
   const user = getUsuario(sender);
 
-  if (user.pets.length === 0) return reply(`❌ Você não tem pet!\nUse: ${PREFIX}adotar <pet>`);
+  if (user.pets.length === 0) return ctx.reply(`❌ Você não tem pet!\nUse: ${PREFIX}adotar <pet>`);
 
   let texto = `🐾 *SEUS PETS*\n\n`;
   user.pets.forEach((p, i) => {
@@ -517,7 +622,17 @@ export async function executePets(ctx) {
     texto += `   😊 Felicidade: ${p.felicidade}/100 | 🍖 Fome: ${p.fome}/100\n\n`;
   });
 
-  return reply(texto);
+  const botoes = gerarBotoesComandosRPG('pets');
+  try {
+    await enviarBotoes(client, jid, {
+      corpo: texto,
+      rodape: '© Pikachu Bot',
+      mencoes: [sender],
+      botoes: botoes
+    }, msg);
+  } catch {
+    return ctx.reply(texto);
+  }
 }
 
 // =========================================
@@ -615,12 +730,22 @@ export async function executeComprarCasa(ctx) {
 // !casas
 // =========================================
 export async function executeCasas(ctx) {
-  const { reply } = ctx;
+  const { client, msg, sender, jid, reply } = ctx;
 
   let texto = `🏠 *CASAS DISPONÍVEIS*\n\n`;
   for (const [k, v] of Object.entries(CASAS)) {
     texto += `• *${v.nome}* — ${v.preco} coins\n   🐾 Limite de pets: ${v.bonusPets}\n\n`;
   }
 
-  return reply(texto);
-}
+  const botoes = gerarBotoesComandosRPG('casas');
+  try {
+    await enviarBotoes(client, jid, {
+      corpo: texto,
+      rodape: '© Pikachu Bot',
+      mencoes: [sender],
+      botoes: botoes
+    }, msg);
+  } catch {
+    return reply(texto);
+  }
+                                             }
