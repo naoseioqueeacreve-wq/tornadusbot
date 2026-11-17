@@ -1,5 +1,5 @@
 // =========================================
-// SISTEMA DE BOTÕES (CORRIGIDO PARA GIFTED-BTNS)
+// SISTEMA DE BOTÕES (FORMATO DE IMAGEM CORRIGIDO)
 // =========================================
 import pkg from 'gifted-btns';
 const { sendInteractiveMessage } = pkg;
@@ -39,7 +39,7 @@ export function botaoResposta(texto, id) {
 }
 
 // =========================================
-// ENVIO (Agora aceita Imagem)
+// ENVIO (Agora converte Buffer para o formato aceito)
 // =========================================
 export async function enviarBotoes(client, jid, opcoes, msgOriginal = null) {
   const { titulo, corpo, rodape, botoes, mencoes, imagem } = opcoes;
@@ -55,16 +55,22 @@ export async function enviarBotoes(client, jid, opcoes, msgOriginal = null) {
       interactiveButtons: botoes
     };
 
-    // Se tiver imagem (Buffer ou URL), adiciona no payload
+    // 🖼️ Converte o Buffer da imagem para o formato { url: 'data:image/...' } que a gifted-btns aceita
     if (imagem) {
-      payload.image = imagem; 
+      if (Buffer.isBuffer(imagem)) {
+        payload.image = { url: `data:image/png;base64,${imagem.toString('base64')}` };
+      } else if (typeof imagem === 'string') {
+        payload.image = { url: imagem };
+      } else {
+        payload.image = imagem;
+      }
     }
 
     await sendInteractiveMessage(client, jid, payload, options);
   } catch (e) {
     console.error('[BOTÕES] Erro ao enviar pela biblioteca:', e);
     
-    // Fallback: Se a API bloquear, envia como texto/imagem normal
+    // Fallback: envia imagem + texto separadamente caso a API bloqueie
     if (imagem) {
       await client.sendMessage(jid, { image: imagem, caption: `${corpo}\n\n${rodape || ''}` }, options);
     } else {
