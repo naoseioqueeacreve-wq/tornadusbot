@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { PREFIX } from '../config.js';
+import { PREFIX, OWNER_NUMBER } from '../config.js'; // 👈 Adicionado OWNER_NUMBER
 import { isOwner, isAdmin } from '../functions/permissions.js';
 import { isVIP } from '../functions/vipDB.js';
 import { enviarBotoes, botaoLista, botaoResposta } from '../functions/botoes.js';
@@ -8,16 +8,15 @@ import { enviarBotoes, botaoLista, botaoResposta } from '../functions/botoes.js'
 // PERSONALIZAÇÃO (é só trocar aqui)
 // =========================================
 export const MENU_BOTOES = {
-  nome: 'FREDDY BOT',          // nome mostrado no título e no campo BOT
-  emoji: '🧸',                  // emoji principal
-  detalhe: '🍯',                // emoji de enfeite
-  tituloBotao: 'MENU FREDDY',  // texto do botão que abre a lista
+  nome: 'FREDDY BOT',          
+  emoji: '🧸',                  
+  detalhe: '🍯',                
+  tituloBotao: 'MENU FREDDY',  
   rodape: '© Freddy Bots',
-  usarFoto: false              // true = usa ./src/assets/menus/menu.jpg no topo da mensagem
+  usarFoto: false              
 };
 
 // Categorias da lista (máximo de 10 opções no total)
-// cmd = comando que roda quando a pessoa toca na opção
 const CATEGORIAS = [
   { secao: '🛡️ MENU ADMIN',      tag: 'Admins',    titulo: 'MENU ADMIN',      desc: 'COMANDOS ADMINISTRATIVOS.', cmd: 'menuadmin' },
   { secao: '👥 MENU MEMBROS',    tag: 'Membros',   titulo: 'MENU MEMBROS',    desc: 'COMANDOS PARA TODOS.',      cmd: 'menumembros' },
@@ -61,7 +60,7 @@ function cargoDe(sender, groupMetadata) {
 }
 
 // =========================================
-// MONTAGEM DO MENU (separada para poder testar)
+// MONTAGEM DO MENU
 // =========================================
 export function montarMenuBotoes({ sender, groupMetadata, uptime = process.uptime() }) {
   const c = MENU_BOTOES;
@@ -102,14 +101,13 @@ export function montarMenuBotoes({ sender, groupMetadata, uptime = process.uptim
     mencoes: [sender],
     botoes: [
       botaoLista(c.tituloBotao, secoes),
-      botaoResposta('⚡ PING', `${PREFIX}ping`)
+      botaoResposta('⚡ MEU DONO', `${PREFIX}ping`)
     ]
   };
 }
 
 // =========================================
 // COMANDO: !menu (com botões)
-// `fallback` = função do menu de texto antigo, usada se o envio falhar
 // =========================================
 export async function executeMenuBotoes(ctx, fallback = null) {
   const { client, msg, sender, groupMetadata, reply } = ctx;
@@ -118,7 +116,7 @@ export async function executeMenuBotoes(ctx, fallback = null) {
   try {
     const opcoes = montarMenuBotoes({ sender, groupMetadata });
     if (MENU_BOTOES.usarFoto) opcoes.imagem = getFotoMenu('menu');
-    await enviarBotoes(client, jid, opcoes);
+    await enviarBotoes(client, jid, opcoes, msg);
   } catch (e) {
     console.error('[BOTÕES] Falha ao enviar o menu com botões:', e.message);
     if (typeof fallback === 'function') return fallback(ctx);
@@ -127,18 +125,32 @@ export async function executeMenuBotoes(ctx, fallback = null) {
 }
 
 // =========================================
-// COMANDO: !ping
+// COMANDO: !ping (AGORA É O CONTATO DO DONO)
 // =========================================
 export async function executePing(ctx) {
-  const { reply, msg } = ctx;
+  const { client, msg, jid, reply } = ctx;
+  
+  // Pega o número do dono do config.js (remove o @s.whatsapp.net se tiver)
+  const numeroDono = OWNER_NUMBER ? OWNER_NUMBER.split('@')[0] : 'Não configurado';
 
-  const enviadaEm = Number(msg.messageTimestamp) * 1000;
-  const latencia = Number.isFinite(enviadaEm) && enviadaEm > 0 ? Math.max(0, Date.now() - enviadaEm) : null;
+  const texto = `*⚡ MEU DONO ⚡*\n\n` +
+    `O número do meu dono é: *+${numeroDono}*\n\n` +
+    `🛒 Se você quiser comprar o bot, só chamar no PV (privado) neste número!\n\n` +
+    `👇 Toque no botão abaixo para abrir o menu de membros.`;
 
-  return reply(
-    `🏓 *PONG!*\n\n` +
-    (latencia !== null ? `⚡ *Latência:* ${latencia} ms\n` : '') +
-    `⏱️ *Online:* ${formatarUptime(process.uptime())}\n` +
-    `${MENU_BOTOES.emoji} *${MENU_BOTOES.nome}* funcionando!`
-  );
+  const botoes = [
+    botaoResposta('👥 ABRIR MENU MEMBROS', `${PREFIX}menumembros`)
+  ];
+
+  try {
+    await enviarBotoes(client, jid, {
+      titulo: '⚡ Contato do Dono',
+      corpo: texto,
+      rodape: '© Pikachu Bot',
+      botoes: botoes
+    }, msg);
+  } catch (e) {
+    console.error('[DONO] Erro ao enviar botões:', e.message);
+    return reply(texto);
+  }
 }
