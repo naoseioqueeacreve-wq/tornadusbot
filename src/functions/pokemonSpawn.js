@@ -11,7 +11,6 @@ export function registrarGrupo(jid) {}
 let currentClient = null;
 let cronIniciado = false;
 
-// Função para baixar a imagem contornando o bloqueio HTTP 429
 async function baixarImagem(url) {
   try {
     const response = await fetch(url, {
@@ -92,7 +91,7 @@ export function iniciarSpawn(client) {
         botaoResposta('🎯 Capturar Pokémon', `${PREFIX}capturar ${pokemon.nome.toLowerCase()}`)
       ];
 
-      // Envia tudo junto (Imagem + Texto + Botão)
+      // Envia Imagem + Texto + Botão na mesma mensagem
       await enviarBotoes(currentClient, jid, {
         titulo: '⚡ Pokémon Selvagem',
         corpo: texto,
