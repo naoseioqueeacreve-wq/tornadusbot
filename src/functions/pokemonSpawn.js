@@ -2,10 +2,10 @@ import cron from 'node-cron';
 import { sortearPokemon, RARIDADES, IMAGENS, getGeracaoAtual } from './pokemon.js';
 import { lerDB, salvarDB, getGruposSpawn } from './pokemonDB.js';
 import { iniciarRaids } from './pokemonRaid.js';
+import { PREFIX } from '../config.js';
+import { enviarBotoes, botaoResposta } from './botoes.js';
 
 // Mantidos só por compatibilidade com quem ainda importa estes nomes.
-// O spawn NÃO usa mais os grupos "vistos" pelo bot: ele só acontece nos
-// grupos em que o spawn foi ligado com !ativarspawn (ver getGruposSpawn).
 export const gruposAtivos = new Set();
 export function registrarGrupo(jid) {}
 
@@ -34,7 +34,6 @@ async function baixarImagem(url) {
 }
 
 export function iniciarSpawn(client) {
-  // As raids usam o mesmo ponto de partida: sobem junto com o spawn (e acompanham as reconexões)
   iniciarRaids(client);
 
   currentClient = client;
@@ -45,7 +44,6 @@ export function iniciarSpawn(client) {
 
   cron.schedule('*/5 * * * *', async () => {
     try {
-      // Só gira se pelo menos um grupo tiver o spawn ligado
       if (getGruposSpawn().length === 0) return;
 
       let db = lerDB();
@@ -60,14 +58,12 @@ export function iniciarSpawn(client) {
           try {
             await currentClient.sendMessage(jidAntigo, { text: `💨 *${velho.emoji} ${velho.nome}* fugiu! Ninguém capturou a tempo.` });
           } catch (e) {}
-          // Relê o banco: ele pode ter mudado enquanto a mensagem era enviada
           db = lerDB();
         } else {
           return;
         }
       }
 
-      // Sorteia apenas entre os grupos com spawn ligado
       const grupos = getGruposSpawn();
       if (grupos.length === 0) return;
       const jid = grupos[Math.floor(Math.random() * grupos.length)];
@@ -77,7 +73,6 @@ export function iniciarSpawn(client) {
       db.spawnAtual = { jid, pokemon, expiraEm: Date.now() + 3 * 60 * 1000 };
       salvarDB(db);
 
-      // ⚡ AQUI ESTÁ O AVISO DA GERAÇÃO DO DIA
       const texto = `⚡ *UM POKÉMON SELVAGEM APARECEU!* ⚡\n\n` +
         `📅 Geração de Hoje: *${getGeracaoAtual()}*\n\n` +
         `   ${pokemon.emoji} *${pokemon.nome}*\n` +
@@ -88,19 +83,36 @@ export function iniciarSpawn(client) {
         `_(Você pode escolher a bola: !capturar ${pokemon.nome} great)_`;
 
       const urlImagem = pokemon.img || pokemon.imagem || pokemon.gif || pokemon.url || (IMAGENS ? IMAGENS.spawn : null);
-      let enviou = false;
+      let msgEnviada = null;
 
       if (urlImagem && typeof urlImagem === 'string' && urlImagem.startsWith('http')) {
         const buffer = await baixarImagem(urlImagem);
         if (buffer) {
           try {
-            await currentClient.sendMessage(jid, { image: buffer, caption: texto });
-            enviou = true;
+            msgEnviada = await currentClient.sendMessage(jid, { image: buffer, caption: texto });
           } catch (err) {}
         }
       }
 
-      if (!enviou) await currentClient.sendMessage(jid, { text: texto });
+      if (!msgEnviada) {
+        msgEnviada = await currentClient.sendMessage(jid, { text: texto });
+      }
+
+      // Envia os botões de captura citando a mensagem do Pokémon
+      const botoes = [
+        botaoResposta('🎯 Capturar Pokémon', `${PREFIX}capturar ${pokemon.nome.toLowerCase()}`)
+      ];
+      
+      try {
+        await enviarBotoes(currentClient, jid, {
+          corpo: `⚡ *${pokemon.nome}* está esperando! O que deseja fazer?`,
+          rodape: '© Pikachu Bot',
+          botoes
+        }, msgEnviada);
+      } catch (e) {
+        console.error('[POKEMON] Erro ao enviar botões de captura:', e.message);
+      }
+
       console.log(`[POKEMON] ✅ Spawn automático enviado em ${jid}: ${pokemon.nome}`);
 
     } catch (error) {
@@ -126,18 +138,35 @@ export async function forcarSpawn(client, jid) {
     `💡 Use: \`!capturar ${pokemon.nome}\``;
 
   const urlImagem = pokemon.img || pokemon.imagem || pokemon.gif || pokemon.url || (IMAGENS ? IMAGENS.spawn : null);
-  let enviou = false;
+  let msgEnviada = null;
 
   if (urlImagem && typeof urlImagem === 'string' && urlImagem.startsWith('http')) {
     const buffer = await baixarImagem(urlImagem);
     if (buffer) {
       try {
-        await client.sendMessage(jid, { image: buffer, caption: texto });
-        enviou = true;
+        msgEnviada = await client.sendMessage(jid, { image: buffer, caption: texto });
       } catch (err) {}
     }
   }
   
-  if (!enviou) await client.sendMessage(jid, { text: texto });
+  if (!msgEnviada) {
+    msgEnviada = await client.sendMessage(jid, { text: texto });
+  }
+
+  // Envia os botões de captura
+  const botoes = [
+    botaoResposta('🎯 Capturar Pokémon', `${PREFIX}capturar ${pokemon.nome.toLowerCase()}`)
+  ];
+
+  try {
+    await enviarBotoes(client, jid, {
+      corpo: `⚡ *${pokemon.nome}* está esperando! O que deseja fazer?`,
+      rodape: '© Pikachu Bot',
+      botoes
+    }, msgEnviada);
+  } catch (e) {
+    console.error('[POKEMON] Erro ao enviar botões de captura:', e.message);
+  }
+
   return true;
-    }
+}
