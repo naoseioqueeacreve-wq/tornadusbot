@@ -4,8 +4,8 @@ import { getVIPCommands, isVIP, getVipExpiracao } from '../functions/vipDB.js';
 import { getReligiao } from '../functions/religiaoDB.js';
 import fs from 'node:fs';
 
-// 🔥 IMPORTAÇÃO DO NOVO SISTEMA DE BOTÕES
-import { sendButtons } from 'gifted-btns';
+// 🕹️ IMPORTAÇÃO DO SISTEMA DE BOTÕES
+import { enviarBotoes, botaoLista, botaoResposta } from '../functions/botoes.js';
 
 // =========================================
 // FUNÇÃO AUXILIAR
@@ -31,10 +31,36 @@ function filtrarMenuVIP(texto) {
 }
 
 // =========================================
-// MENU PRINCIPAL
+// 🎲 FUNÇÃO PARA GERAR BOTÕES ALEATÓRIOS
+// =========================================
+function gerarBotoesAleatorios(menuAtual) {
+  const menusDisponiveis = [
+    { id: 'menu', text: '🏠 MENU PRINCIPAL' },
+    { id: 'menurg', text: '🗡️ MENU RPG' },
+    { id: 'menugame', text: '🎮 MENU GAME' },
+    { id: 'menupokemon', text: '⚡ MENU POKÉMON' },
+    { id: 'menubaixar', text: '📥 MENU DOWNLOADS' },
+    { id: 'menumembros', text: '👥 MENU MEMBROS' },
+    { id: 'menureligioso', text: '🕊️ MENU RELIGIOSO' },
+    { id: 'menucatolico', text: '⛪ MENU CATÓLICO' },
+    { id: 'menuvip', text: '💎 MENU VIP' }
+  ];
+
+  // Remove o menu atual da lista para não aparecer o mesmo menu em que a pessoa está
+  const menusFiltrados = menusDisponiveis.filter(m => m.id !== menuAtual);
+
+  // Embaralha a lista e pega os 2 primeiros
+  const sorteados = menusFiltrados.sort(() => 0.5 - Math.random()).slice(0, 2);
+
+  // Transforma em botões
+  return sorteados.map(m => botaoResposta(m.text, `${PREFIX}${m.id}`));
+}
+
+// =========================================
+// MENU PRINCIPAL (COM LISTA INTERATIVA)
 // =========================================
 export async function executeMenu(ctx) {
-  const { reply, sender, pushName } = ctx;
+  const { reply, sender, pushName, client, jid, msg } = ctx;
   const hora = new Date().toLocaleTimeString('pt-BR');
   const numero = sender.split('@')[0].split(':')[0];
   const ehDono = isOwner(sender);
@@ -67,18 +93,62 @@ export async function executeMenu(ctx) {
     `│  🕊️ ${PREFIX}menureligioso\n` +
     `│  💎 ${PREFIX}menuvip\n` +
     `│  👑 ${PREFIX}menudono\n` +
-    `╰━〔 ⚡ Pikachu Bot 🍃 〕━╯`;
+    `╰━〔 ⚡ Pikachu Bot 🍃 〕━╯\n\n` +
+    `👇 *Toque no botão abaixo para acessar os menus!*`;
 
-  const foto = getFotoMenu('menu');
-  if (foto) return reply(menuText, { image: foto, mentions: [sender] });
-  return reply(menuText, { mentions: [sender] });
+  const secoes = [
+    {
+      titulo: "🛡️ 𝙰𝙳𝙼𝙸𝙽𝙸𝚂𝚃𝚁𝙰𝙲̧𝙰̃𝙾 ↴",
+      linhas: [
+        { titulo: "👑 MENU DONO", descricao: "Comandos exclusivos do dono.", tag: "Dono", id: `${PREFIX}menudono` },
+        { titulo: "🛡️ MENU ADMIN", descricao: "Ferramentas de moderação.", tag: "Admin", id: `${PREFIX}menuadmin` }
+      ]
+    },
+    {
+      titulo: "🎮 𝙹𝙾𝙶𝙾𝚂 𝙴 𝚁𝙿𝙶 ↴",
+      linhas: [
+        { titulo: "🎮 MENU GAME", descricao: "Jogos e brincadeiras.", tag: "Games", id: `${PREFIX}menugame` },
+        { titulo: "🗡️ MENU RPG", descricao: "Sistema de economia.", tag: "RPG", id: `${PREFIX}menurg` },
+        { titulo: "⚡ MENU POKÉMON", descricao: "Capture, batalhe e treine.", tag: "Pokémon", id: `${PREFIX}menupokemon` }
+      ]
+    },
+    {
+      titulo: "📂 𝙾𝚄𝚃𝚁𝙾𝚂 𝙼𝙴𝙽𝚄𝚂 ↴",
+      linhas: [
+        { titulo: "📥 MENU DOWNLOADS", descricao: "Downloads de mídias.", tag: "Downloads", id: `${PREFIX}menubaixar` },
+        { titulo: "👥 MENU MEMBROS", descricao: "Utilidades para membros.", tag: "Membros", id: `${PREFIX}menumembros` },
+        { titulo: "🕊️ MENU RELIGIOSO", descricao: "Conteúdo religioso.", tag: "Fé", id: `${PREFIX}menureligioso` },
+        { titulo: "💎 MENU VIP", descricao: "Área exclusiva VIP.", tag: "VIP", id: `${PREFIX}menuvip` }
+      ]
+    }
+  ];
+
+  const botoes = [
+    botaoLista('『 𝑨𝑩𝑹𝑰𝑹 𝑴𝑬𝑵𝑼𝑺 』', secoes),
+    botaoResposta('⚡ MEU DONO', `${PREFIX}ping`)
+  ];
+
+  try {
+    await enviarBotoes(client, jid, {
+      titulo: '⚡ Pikachu Bot 🍃',
+      corpo: menuText,
+      rodape: '© Pikachu Bot',
+      mencoes: [sender],
+      botoes: botoes
+    }, msg);
+  } catch (e) {
+    console.error('[MENU] Falha ao enviar com botões, enviando fallback:', e.message);
+    const foto = getFotoMenu('menu');
+    if (foto) return reply(menuText, { image: foto, mentions: [sender] });
+    return reply(menuText, { mentions: [sender] });
+  }
 }
 
 // =========================================
-// MENU RELIGIOSO (HUB)
+// MENU RELIGIOSO
 // =========================================
 export async function executeMenuReligioso(ctx) {
-  const { reply, sender, pushName, isGroup, groupMetadata } = ctx;
+  const { reply, sender, pushName, isGroup, groupMetadata, client, jid, msg } = ctx;
 
   const numero = sender.split('@')[0].split(':')[0];
   const ehDono = isOwner(sender);
@@ -130,16 +200,21 @@ export async function executeMenuReligioso(ctx) {
     `\n` +
     `⚡ ━━━━━━━━━━━━━━━━━━━━━━━━━ ⚡`;
 
-  const foto = getFotoMenu('religioso');
-  if (foto) return reply(menuText, { image: foto, mentions: [sender] });
-  return reply(menuText, { mentions: [sender] });
+  const botoes = gerarBotoesAleatorios('menureligioso');
+  try {
+    await enviarBotoes(client, jid, { corpo: menuText, rodape: '© Pikachu Bot', mencoes: [sender], botoes }, msg);
+  } catch (e) {
+    const foto = getFotoMenu('religioso');
+    if (foto) return reply(menuText, { image: foto, mentions: [sender] });
+    return reply(menuText, { mentions: [sender] });
+  }
 }
 
 // =========================================
 // MENU CATÓLICO
 // =========================================
 export async function executeMenuCatolico(ctx) {
-  const { reply, sender, pushName } = ctx;
+  const { reply, sender, pushName, client, jid, msg } = ctx;
 
   const menuText = `✝️ ━━━━━━━━ MENU CATÓLICO ━━━━━━━━ ✝️\n` +
     `\n` +
@@ -176,16 +251,21 @@ export async function executeMenuCatolico(ctx) {
     `\n` +
     `✝️ ━━━━━━━━━━━━━━━━━━━━━━━━━ ✝️`;
 
-  const foto = getFotoMenu('catolico');
-  if (foto) return reply(menuText, { image: foto, mentions: [sender] });
-  return reply(menuText, { mentions: [sender] });
+  const botoes = gerarBotoesAleatorios('menucatolico');
+  try {
+    await enviarBotoes(client, jid, { corpo: menuText, rodape: '© Pikachu Bot', mencoes: [sender], botoes }, msg);
+  } catch (e) {
+    const foto = getFotoMenu('catolico');
+    if (foto) return reply(menuText, { image: foto, mentions: [sender] });
+    return reply(menuText, { mentions: [sender] });
+  }
 }
 
 // =========================================
 // MENU VIP
 // =========================================
 export async function executeMenuVIP(ctx) {
-  const { reply, sender, pushName } = ctx;
+  const { reply, sender, pushName, client, jid, msg } = ctx;
   const cmdVips = getVIPCommands();
 
   const ehVIP = isVIP(sender);
@@ -231,16 +311,21 @@ export async function executeMenuVIP(ctx) {
 
   menuText += `╰━━━━━━━〔 💎 Área Premium 💎 〕━━━━━━━╯`;
 
-  const foto = getFotoMenu('vip');
-  if (foto) return reply(menuText, { image: foto });
-  return reply(menuText);
+  const botoes = gerarBotoesAleatorios('menuvip');
+  try {
+    await enviarBotoes(client, jid, { corpo: menuText, rodape: '© Pikachu Bot', botoes }, msg);
+  } catch (e) {
+    const foto = getFotoMenu('vip');
+    if (foto) return reply(menuText, { image: foto });
+    return reply(menuText);
+  }
 }
 
 // =========================================
 // MENU MEMBROS
 // =========================================
 export async function executeMenuMembros(ctx) {
-  const { reply } = ctx;
+  const { reply, client, jid, msg } = ctx;
 
   let menuText = `╭━━━〔 👥 𝗠𝗘𝗡𝗨 𝗠𝗘𝗠𝗕𝗥𝗢𝗦 〕━━━╮\n` +
     `│\n` +
@@ -320,13 +405,18 @@ export async function executeMenuMembros(ctx) {
 
   menuText = filtrarMenuVIP(menuText);
 
-  const foto = getFotoMenu('menumembros');
-  if (foto) return reply(menuText, { image: foto });
-  return reply(menuText);
+  const botoes = gerarBotoesAleatorios('menumembros');
+  try {
+    await enviarBotoes(client, jid, { corpo: menuText, rodape: '© Pikachu Bot', botoes }, msg);
+  } catch (e) {
+    const foto = getFotoMenu('menumembros');
+    if (foto) return reply(menuText, { image: foto });
+    return reply(menuText);
+  }
 }
 
 // =========================================
-// MENU ADMIN
+// MENU ADMIN (SEM BOTÕES ALEATÓRIOS)
 // =========================================
 export async function executeMenuAdmin(ctx) {
   const { reply, sender, groupMetadata } = ctx;
@@ -421,10 +511,10 @@ export async function executeMenuAdmin(ctx) {
 }
 
 // =========================================
-// MENU POKÉMON (Atualizado com Raids)
+// MENU POKÉMON
 // =========================================
 export async function executeMenuPokemon(ctx) {
-  const { reply, sender } = ctx;
+  const { reply, sender, client, jid, msg } = ctx;
 
   let menuText = `╭━━━〔 ⚡ 𝗠𝗘𝗡𝗨 𝗣𝗢𝗞𝗘𝗠𝗢𝗡 〕━━━╮\n` +
     `│\n` +
@@ -466,16 +556,21 @@ export async function executeMenuPokemon(ctx) {
 
   menuText = filtrarMenuVIP(menuText);
 
-  const foto = getFotoMenu('menupokemon');
-  if (foto) return reply(menuText, { image: foto, mentions: [sender] });
-  return reply(menuText, { mentions: [sender] });
+  const botoes = gerarBotoesAleatorios('menupokemon');
+  try {
+    await enviarBotoes(client, jid, { corpo: menuText, rodape: '© Pikachu Bot', mencoes: [sender], botoes }, msg);
+  } catch (e) {
+    const foto = getFotoMenu('menupokemon');
+    if (foto) return reply(menuText, { image: foto, mentions: [sender] });
+    return reply(menuText, { mentions: [sender] });
+  }
 }
 
 // =========================================
 // MENU RPG
 // =========================================
 export async function executeMenuRPG(ctx) {
-  const { reply } = ctx;
+  const { reply, client, jid, msg } = ctx;
 
   let menuText = `╭━━━〔 🗡️ 𝗠𝗘𝗡𝗨 𝗥𝗣𝗚 〕━━━╮\n` +
     `│\n` +
@@ -568,16 +663,21 @@ export async function executeMenuRPG(ctx) {
 
   menuText = filtrarMenuVIP(menuText);
 
-  const foto = getFotoMenu('rpg');
-  if (foto) return reply(menuText, { image: foto });
-  return reply(menuText);
+  const botoes = gerarBotoesAleatorios('menurg');
+  try {
+    await enviarBotoes(client, jid, { corpo: menuText, rodape: '© Pikachu Bot', botoes }, msg);
+  } catch (e) {
+    const foto = getFotoMenu('rpg');
+    if (foto) return reply(menuText, { image: foto });
+    return reply(menuText);
+  }
 }
 
 // =========================================
 // MENU BAIXAR
 // =========================================
 export async function executeMenuBaixar(ctx) {
-  const { reply } = ctx;
+  const { reply, client, jid, msg } = ctx;
 
   let menuText = `╭━━━〔 📥 𝗠𝗘𝗡𝗨 𝗕𝗔𝗜𝗫𝗔𝗥 〕━━━╮\n` +
     `│\n` +
@@ -606,136 +706,48 @@ export async function executeMenuBaixar(ctx) {
 
   menuText = filtrarMenuVIP(menuText);
 
-  const foto = getFotoMenu('baixar');
-  if (foto) return reply(menuText, { image: foto });
-  return reply(menuText);
-}
-
-// =========================================
-// 🔥 MENU COM BOTÕES RÁPIDOS (CORRIGIDO COM GIFTED-BTNS)
-// =========================================
-export async function executeMenuBotoes(ctx) {
-  const { client, msg, pushName, jid } = ctx;
-
-  const texto = `⚡ *PIKACHU BOT* 🍃\n\n` +
-    `👤 *USUARIO:* ${pushName}\n` +
-    `🕒 *ONLINE:* Agora mesmo\n\n` +
-    `🎒 Escolha uma opção abaixo:`;
-
+  const botoes = gerarBotoesAleatorios('menubaixar');
   try {
-    await sendButtons(client, jid, {
-      title: '⚡ PIKACHU BOT',
-      text: texto,
-      footer: "© Pikachu Bot",
-      buttons: [
-        { 
-          id: 'menu', 
-          text: '⚡ MENU PRINCIPAL' 
-        },
-        { 
-          id: 'ping', 
-          text: '📍 PING' 
-        }
-      ]
-    }, { quoted: msg });
-  } catch (error) {
-    console.error('[MENU BOTOES] Erro:', error);
-    return ctx.reply('❌ Seu WhatsApp não suporta botões. Use !menu.');
+    await enviarBotoes(client, jid, { corpo: menuText, rodape: '© Pikachu Bot', botoes }, msg);
+  } catch (e) {
+    const foto = getFotoMenu('baixar');
+    if (foto) return reply(menuText, { image: foto });
+    return reply(menuText);
   }
 }
 
 // =========================================
-// 🔥 MENU EM LISTA (CORRIGIDO COM GIFTED-BTNS)
+// 🔥 MENU EM LISTA (Mantido por compatibilidade)
 // =========================================
 export async function executeMenuLista(ctx) {
   const { client, msg, pushName, jid } = ctx;
-  const prefixo = PREFIX;
 
   const texto = `⚡ *PIKACHU BOT* 🍃\n\n` +
     `👤 *USUARIO:* @${pushName}\n` +
     `🎒 *Escolha o menu desejado abaixo!* ↴`;
 
-  const sections = [
+  const secoes = [
     {
-      title: "⏤͟͟͞͞ 𝙿𝚁𝙸𝙽𝙲𝙸𝙿𝙰𝙻 ↴",
-      highlight_label: "Popular",
-      rows: [
-        {
-          title: "⚡ MENU PRINCIPAL 💖",
-          description: "O menu inicial do bot.",
-          id: `${prefixo}menu`
-        }
-      ]
-    },
-    {
-      title: "⏤͟͟͞͞ 𝙼𝙴𝙽𝚄𝚂 𝙳𝙴 𝙰𝙳𝙼𝙸𝙽𝙸𝚂𝚃𝚁𝙰𝙲̧𝙰̃𝙾 ↴",
-      rows: [
-        {
-          title: "👑 MENU DONO",
-          description: "Comandos exclusivos do dono.",
-          id: `${prefixo}menudono`
-        },
-        {
-          title: "🛡️ MENU ADMIN",
-          description: "Ferramentas de moderação.",
-          id: `${prefixo}menuadmin`
-        }
-      ]
-    },
-    {
-      title: "⏤͟͟͞͞ 𝙾𝚄𝚃𝚁𝙾𝚂 𝙼𝙴𝙽𝚄𝚂 ↴",
-      rows: [
-        {
-          title: "🎮 MENU JOGOS",
-          description: "Jogos e brincadeiras.",
-          id: `${prefixo}menugame`
-        },
-        {
-          title: "⚔️ MENU RPG",
-          description: "Sistema de economia.",
-          id: `${prefixo}menurg`
-        },
-        {
-          title: "🎒 MENU POKÉMON",
-          description: "Capture, batalhe e treine.",
-          id: `${prefixo}menupokemon`
-        },
-        {
-          title: "📥 MENU DOWNLOADS",
-          description: "Downloads de mídias.",
-          id: `${prefixo}menubaixar`
-        },
-        {
-          title: "👥 MENU MEMBROS",
-          description: "Utilidades para membros.",
-          id: `${prefixo}menumembros`
-        },
-        {
-          title: "💎 MENU VIP",
-          description: "Área exclusiva VIP.",
-          id: `${prefixo}menuvip`
-        }
+      titulo: "⏤͟͟͞͞ 𝙿𝚁𝙸𝙽𝙲𝙸𝙿𝙰𝙻 ↴",
+      linhas: [
+        { titulo: "⚡ MENU PRINCIPAL 💖", descricao: "O menu inicial do bot.", tag: "Popular", id: `${PREFIX}menu` }
       ]
     }
   ];
 
+  const botoes = [
+    botaoLista('『 𝑽𝑬𝑹 𝑳𝑰𝑺𝑻𝑨 』', secoes)
+  ];
+
   try {
-    await sendButtons(client, jid, {
-      text: texto,
-      footer: "© Pikachu Bot",
-      mentions: [msg.key.participant || msg.key.remoteJid],
-      buttons: [
-        {
-          name: "single_select",
-          buttonParamsJson: JSON.stringify({
-            title: "『 𝑽𝑬𝑹 𝑳𝑰𝑺𝑻𝑨 』",
-            sections: sections
-          })
-        }
-      ]
-    }, { quoted: msg });
+    await enviarBotoes(client, jid, {
+      corpo: texto,
+      rodape: '© Pikachu Bot',
+      mencoes: [msg.key.participant || msg.key.remoteJid],
+      botoes: botoes
+    }, msg);
   } catch (error) {
     console.error('[MENU LISTA] Erro:', error);
     return ctx.reply('❌ Seu WhatsApp não suporta listas. Use !menu.');
   }
-                                                          }
+}
