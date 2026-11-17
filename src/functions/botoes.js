@@ -2,7 +2,7 @@
 // SISTEMA DE BOTÕES (CORRIGIDO PARA GIFTED-BTNS)
 // =========================================
 import pkg from 'gifted-btns';
-const { sendInteractiveMessage } = pkg; // 👈 Usando a função correta
+const { sendInteractiveMessage } = pkg;
 
 export const MAX_LINHAS_LISTA = 10;
 export const MAX_BOTOES = 5;
@@ -38,41 +38,38 @@ export function botaoResposta(texto, id) {
   };
 }
 
-export function botaoLink(texto, url) {
-  return {
-    name: 'cta_url',
-    buttonParamsJson: JSON.stringify({ display_text: String(texto), url: String(url), merchant_url: String(url) })
-  };
-}
-
-export function botaoCopiar(texto, codigo) {
-  return {
-    name: 'cta_copy',
-    buttonParamsJson: JSON.stringify({ display_text: String(texto), copy_code: String(codigo) })
-  };
-}
-
 // =========================================
-// ENVIO (Usando sendInteractiveMessage)
+// ENVIO (Agora aceita Imagem)
 // =========================================
 export async function enviarBotoes(client, jid, opcoes, msgOriginal = null) {
-  const { titulo, corpo, rodape, botoes, mencoes } = opcoes;
+  const { titulo, corpo, rodape, botoes, mencoes, imagem } = opcoes;
 
   const options = { mentions: mencoes || [] };
   if (msgOriginal) options.quoted = msgOriginal;
 
   try {
-    // A função sendInteractiveMessage aceita single_select e quick_reply
-    await sendInteractiveMessage(client, jid, {
+    const payload = {
       title: titulo || ' ',
       text: corpo,
       footer: rodape || ' ',
-      interactiveButtons: botoes // 👈 O array de botões vai aqui
-    }, options);
+      interactiveButtons: botoes
+    };
+
+    // Se tiver imagem (Buffer ou URL), adiciona no payload
+    if (imagem) {
+      payload.image = imagem; 
+    }
+
+    await sendInteractiveMessage(client, jid, payload, options);
   } catch (e) {
     console.error('[BOTÕES] Erro ao enviar pela biblioteca:', e);
-    // Fallback: Se o WhatsApp bloquear, envia como texto normal
-    await client.sendMessage(jid, { text: `${corpo}\n\n${rodape || ''}` }, options);
+    
+    // Fallback: Se a API bloquear, envia como texto/imagem normal
+    if (imagem) {
+      await client.sendMessage(jid, { image: imagem, caption: `${corpo}\n\n${rodape || ''}` }, options);
+    } else {
+      await client.sendMessage(jid, { text: `${corpo}\n\n${rodape || ''}` }, options);
+    }
   }
 }
 
@@ -100,4 +97,3 @@ export function getRespostaBotao(msg) {
 
   return antigo ? String(antigo).trim() : '';
 }
-  
