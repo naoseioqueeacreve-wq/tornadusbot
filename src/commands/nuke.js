@@ -24,11 +24,19 @@ export async function executeNuke(client, msg, args = []) {
     // Verifica se o bot é admin ANTES de pedir confirmação
     try {
       const metaCheck = await client.groupMetadata(jid);
+      
       const botId = norm(client.user.id);
-      const botNoGrupo = metaCheck.participants.find(p => norm(p.id) === botId);
+      const botLid = client.user.lid ? norm(client.user.lid) : null;
+      
+      // Procura o bot na lista de participantes garantindo compatibilidade com LID
+      const botNoGrupo = metaCheck.participants.find(p => {
+        const pId = norm(p.id);
+        const pLid = p.lid ? norm(p.lid) : null;
+        return pId === botId || pId === botLid || pLid === botId;
+      });
       
       if (!botNoGrupo?.admin) {
-        return client.sendMessage(jid, { text: '❌ Eu preciso ser *ADMIN* do grupo para executar o nuke.' }, { quoted: msg });
+        return client.sendMessage(jid, { text: '❌ Eu preciso ser *ADMIN* do grupo para executar o nuke.\n\n👉 Vá nas configurações do grupo e me promova a administrador.' }, { quoted: msg });
       }
     } catch (e) {
       return client.sendMessage(jid, { text: `❌ Não consegui verificar os admins do grupo: ${e.message}` }, { quoted: msg });
@@ -52,12 +60,16 @@ export async function executeNuke(client, msg, args = []) {
   try {
     const meta = await client.groupMetadata(jid);
     const botId = norm(client.user.id);
+    const botLid = client.user.lid ? norm(client.user.lid) : null;
     const senderId = norm(sender);
 
     // Filtra quem deve ser removido (todos, exceto o bot e quem enviou o comando)
     const paraRemover = meta.participants
       .map(p => p.id)
-      .filter(id => norm(id) !== botId && norm(id) !== senderId);
+      .filter(id => {
+        const n = norm(id);
+        return n !== botId && n !== botLid && n !== senderId;
+      });
 
     if (paraRemover.length === 0) {
       return client.sendMessage(jid, { text: '🤷‍♂️ Não há mais ninguém para remover neste grupo.' }, { quoted: msg });
@@ -84,4 +96,4 @@ export async function executeNuke(client, msg, args = []) {
     console.error('[NUKE] Erro:', error);
     await client.sendMessage(jid, { text: `❌ Ocorreu um erro ao executar o nuke: ${error.message}` }, { quoted: msg });
   }
-         }
+}
