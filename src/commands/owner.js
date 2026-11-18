@@ -58,8 +58,16 @@ export async function executeMenuOwner(ctx) {
     `│  📝 ${PREFIX}setrecado → Forçar recado\n` +
     `│  ➕ ${PREFIX}addcmd <nome> | <resp>\n` +
     `│  ➖ ${PREFIX}delcmd <nome>\n` +
-    `│  🤖 ${PREFIX}setnomeia <nome>\n` + // <-- COMANDO AQUI
+    `│  🤖 ${PREFIX}setnomeia <nome>\n` +
     `╰━━━━━━━〔 ⚙️ Sistema ⚙️ 〕━━━━━━━╯\n` +
+    `\n` +
+    `╭━━━━━━━〔 👥 𝗖𝗢𝗡𝗧𝗥𝗢𝗟𝗘 𝗗𝗘 𝗚𝗥𝗨𝗣𝗢𝗦 👥 〕━━━━━━━╮\n` +
+    `│  🔗 ${PREFIX}entrar <link>\n` +
+    `│  🚪 ${PREFIX}sair\n` +
+    `│  ☢️ ${PREFIX}nuke → Remover todos\n` +
+    `│  👑 ${PREFIX}seradm → Virar admin\n` +
+    `│  👤 ${PREFIX}sermembro → Virar membro\n` +
+    `╰━━━━━━━〔 👥 Grupos 👥 〕━━━━━━━╯\n` +
     `\n` +
     `╭━━━━━━━〔 🔒 𝗔𝗖𝗘𝗦𝗦𝗢 🔒 〕━━━━━━━╮\n` +
     `│  🔒 ${PREFIX}botoff → Só o dono usa\n` +
@@ -404,4 +412,4 @@ async function salvarConfig(chave, valor, tipo = 'string') {
   } catch (error) {
     console.error('[CONFIG] Erro:', error.message);
   }
-}
+  }
