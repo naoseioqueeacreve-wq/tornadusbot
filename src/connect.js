@@ -76,7 +76,7 @@ async function corrigirSharpInterno() {
 // =========================================
 async function verificarDependencias() {
   log(colors.cyan, '🔍', 'Verificando dependências...');
-  for (const pkg of ['node-cron', 'pino', 'simple-git']) {
+  for (const pkg of ['node-cron', 'pino', 'simple-git', 'qrcode-terminal']) {
     try {
       await import(pkg);
     } catch {
@@ -154,8 +154,7 @@ function sessaoExiste() {
 // CONECTAR VIA CÓDIGO DE PAREAMENTO
 // =========================================
 async function conectarComCodigo(phone) {
-  const sessionPath = './session';
-  const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+  const { state, saveCreds } = await useMultiFileAuthState('./session');
   const client = makeWASocket({
     auth: state,
     logger,
@@ -164,7 +163,7 @@ async function conectarComCodigo(phone) {
 
   let codigoGerado = false;
 
-  client.ev.on('connection.update', async ({ qr, connection, lastDisconnect }) => {
+  client.ev.on('connection.update', async ({ qr }) => {
     if (qr && !codigoGerado) {
       codigoGerado = true;
       try {
@@ -177,6 +176,33 @@ async function conectarComCodigo(phone) {
       } catch (e) {
         log(colors.red, '❌', `Erro ao gerar código: ${e.message}`);
       }
+    }
+  });
+
+  client.ev.on('creds.update', saveCreds);
+  configurarListeners(client);
+}
+
+// =========================================
+// CONECTAR VIA QR CODE
+// =========================================
+async function conectarComQR() {
+  const qrcode = (await import('qrcode-terminal')).default;
+  const { state, saveCreds } = await useMultiFileAuthState('./session');
+  const client = makeWASocket({
+    auth: state,
+    logger,
+    printQRInTerminal: false
+  });
+
+  client.ev.on('connection.update', ({ qr }) => {
+    if (qr) {
+      console.log(`\n${colors.cyan}╔══════════════════════════════════════╗${colors.reset}`);
+      console.log(`${colors.cyan}║     ESCANEIE O QR CODE ABAIXO         ║${colors.reset}`);
+      console.log(`${colors.cyan}╚══════════════════════════════════════╝${colors.reset}\n`);
+      qrcode.generate(qr, { small: true });
+      console.log(`${colors.yellow}👉 WhatsApp > Aparelhos Conectados > Conectar um aparelho${colors.reset}`);
+      console.log(`${colors.red}⚠️  O QR Code expira em cerca de 20 segundos e será renovado automaticamente.${colors.reset}\n`);
     }
   });
 
@@ -229,20 +255,29 @@ async function exibirMenu() {
   console.log(`${colors.cyan}║       BEM-VINDO AO ${BOT_NAME.toUpperCase().padEnd(18)}║${colors.reset}`);
   console.log(`${colors.cyan}╠═══════════════════════════════════════╣${colors.reset}`);
   console.log(`${colors.green}║  [1] Conectar via Código de Pareamento║${colors.reset}`);
-  console.log(`${colors.yellow}║  [2] Suporte                          ║${colors.reset}`);
+  console.log(`${colors.blue}║  [2] Conectar via QR Code             ║${colors.reset}`);
+  console.log(`${colors.yellow}║  [3] Suporte                          ║${colors.reset}`);
   console.log(`${colors.cyan}╚═══════════════════════════════════════╝${colors.reset}\n`);
 
   let escolha = '';
-  while (!['1', '2'].includes(escolha.trim())) {
-    escolha = await rl.question(`${colors.yellow}Escolha uma opção (1 ou 2): ${colors.reset}`);
+  while (!['1', '2', '3'].includes(escolha.trim())) {
+    escolha = await rl.question(`${colors.yellow}Escolha uma opção (1, 2 ou 3): ${colors.reset}`);
   }
+  escolha = escolha.trim();
 
-  if (escolha.trim() === '2') {
+  if (escolha === '3') {
     console.log(`\n${colors.cyan}📞 Suporte: https://wa.me/5511999999999\n${colors.reset}`);
     rl.close();
     process.exit(0);
   }
 
+  if (escolha === '2') {
+    rl.close();
+    log(colors.yellow, '⏳', 'Gerando QR Code...');
+    return conectarComQR();
+  }
+
+  // Opção 1: código de pareamento
   let phone = '';
   while (phone.length < 10) {
     const raw = await rl.question(`${colors.cyan}📱 Digite seu número com DDD (Ex: 5511999999999):\n${colors.yellow}Número: ${colors.reset}`);
@@ -301,11 +336,9 @@ function configurarListeners(client) {
         if (fs.existsSync('./session')) {
           fs.rmSync('./session', { recursive: true, force: true });
         }
-        // Sessão apagada: exibe menu para novo número
         setTimeout(() => startConnect(false), 3000);
       } else {
         log(colors.yellow, '🔄', `Conexão perdida (código ${statusCode ?? 'desconhecido'}). Reconectando...`);
-        // Reconecta silenciosamente sem mostrar menu
         setTimeout(() => startConnect(true), 3000);
       }
     }
@@ -423,6 +456,6 @@ function configurarAntiCall(client) {
 }
 
 // =========================================
-// INICIALIZAÇÃO DO BOT
+// START DO BOT
 // =========================================
 startConnect().catch(console.error);
