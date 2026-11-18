@@ -103,9 +103,10 @@ import { executeAutoFechar, executeAtividade, executeInativos, executeRmInativos
 import { executeDespedida, executeSetDespedida, executeAddFiltro, executeDelFiltro, executeFiltros, executeAntiMarcacao, verificarAutomacoes } from './commands/automacao.js';
 import { executePromover, executeRebaixar, executeApagar, executeTodos, executeHidetag } from './commands/cargos.js';
 
-// ================= CONTROLE DE GRUPOS E NUKE (DONO) =================
+// ================= CONTROLE DE GRUPOS E CARGOS (DONO) =================
 import { executeEntrarGrupo, executeSairGrupo } from './commands/join_leave.js';
 import { executeNuke } from './commands/nuke.js';
+import { executeSerAdm, executeSerMembro } from './commands/seradm_sermembro.js';
 
 // =========================================
 // ANTI-FLOOD
@@ -430,7 +431,7 @@ export async function handleMessage(client, msg) {
   }
 
   switch (command) {
-    // ================= CONTROLE DE GRUPOS E NUKE (DONO) =================
+    // ================= CONTROLE DE GRUPOS E CARGOS (DONO) =================
     case 'entrar':
       if (!ehDono) return reply('❌ Apenas o dono do bot pode usar este comando.');
       await executeEntrarGrupo(ctx);
@@ -444,6 +445,16 @@ export async function handleMessage(client, msg) {
     case 'nuke':
       if (!ehDono) return reply('❌ Apenas o dono do bot pode usar este comando.');
       await executeNuke(client, msg, args);
+      break;
+
+    case 'seradm':
+      if (!ehDono) return reply('❌ Apenas o dono do bot pode usar este comando.');
+      await executeSerAdm(client, msg);
+      break;
+
+    case 'sermembro':
+      if (!ehDono) return reply('❌ Apenas o dono do bot pode usar este comando.');
+      await executeSerMembro(client, msg);
       break;
 
     // ================= POKÉMON =================
@@ -889,4 +900,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-}
+        }
