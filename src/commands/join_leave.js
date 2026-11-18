@@ -1,3 +1,5 @@
+import { PREFIX } from '../config.js'; // 👈 Adicionado esta linha
+
 export async function executeEntrarGrupo(ctx) {
   const { client, q, reply } = ctx;
   
