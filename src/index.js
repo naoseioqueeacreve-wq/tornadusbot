@@ -1,7 +1,5 @@
-import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import { areJidsSameUser } from '@whiskeysockets/baileys'; 
-
 import { PREFIX, BOT_NAME, GRUPO_SUPORTE, GEMINI_API_KEY } from './config.js';
 import { getText, createReply } from './functions/helpers.js';
 import { isOwner, isAdmin, getRealSender } from './functions/permissions.js';
@@ -20,7 +18,7 @@ import { isAntiPVAtivo } from './functions/antipv.js';
 import { isVIP, isVIPCommand } from './functions/vipDB.js';
 
 // 🕹️ IMPORTAÇÃO DO NOVO SISTEMA DE BOTÕES
-import { getRespostaBotao } from './functions/botoes.js';
+import { getRespostaBotao, enviarBotoes, botaoResposta } from './functions/botoes.js';
 import { executeMenuBotoes, executePing } from './commands/menuBotoes.js';
 
 // SISTEMA ANTI-PAYMENT
@@ -581,21 +579,74 @@ export async function handleMessage(client, msg) {
     case 'addcmd': await executeAddCmd(ctx); break;
     case 'delcmd': await executeDelCmd(ctx); break;
     
-    case 'atualizarbot': 
+    // === CENTRAL DE ATUALIZAÇÕES COM BOTÕES ===
+    case 'atualizacao': 
       if (!ehDono) return reply('❌ Apenas o dono do bot pode usar este comando.');
-      await reply('🔄 *Iniciando atualização...*\nBuscando mudanças no GitHub. Por favor, aguarde alguns segundos.');
       
-      const { atualizarBot } = await import('./update.js');
-      const resultadoUpdate = await atualizarBot();
-      
-      await reply(resultadoUpdate.mensagem);
-      
-      if (resultadoUpdate.sucesso) {
-        await reply('♻️ Reiniciando o bot para aplicar o código novo...');
-        setTimeout(() => {
-          process.exit(0);
-        }, 5000);
+      // 🔍 Ação do Botão 1: Verificar
+      if (args[0] === 'verificar') {
+        await reply('🔍 *VERIFICANDO...*\nBuscando novas versões no servidor, aguarde.');
+        try {
+          const { execSync } = await import('node:child_process');
+          execSync('git fetch');
+          const status = execSync('git status -uno').toString();
+          
+          if (status.includes('up to date') || status.includes('em dia') || status.includes('nada a consolidar')) {
+            await reply('✅ *TUDO ATUALIZADO!*\nSeu bot já está rodando na versão mais recente.');
+          } else {
+            await reply('⚠️ *ATUALIZAÇÃO DISPONÍVEL!*\nUse o botão "Atualizar o Bot" no comando `!atualizacao` para baixar.');
+          }
+        } catch (e) {
+          await reply('❌ Ocorreu um erro ao verificar as atualizações.');
+        }
+        break;
       }
+
+      // 📥 Ação do Botão 2: Atualizar
+      if (args[0] === 'baixar') {
+        await reply('🔄 *Iniciando atualização...*\nBuscando mudanças no GitHub. Por favor, aguarde alguns segundos.');
+        
+        const { atualizarBot } = await import('./update.js');
+        const resultadoUpdate = await atualizarBot();
+        
+        await reply(resultadoUpdate.mensagem);
+        
+        if (resultadoUpdate.sucesso) {
+          await reply('♻️ Reiniciando o bot para aplicar o código novo...');
+          setTimeout(() => {
+            process.exit(0);
+          }, 5000);
+        }
+        break;
+      }
+
+      // ✨ Ação do Botão 3: Novidades (Resumido)
+      if (args[0] === 'novidades') {
+        const changelog = `✨ *O QUE HÁ DE NOVO?* ✨\n\n` +
+          `📌 *Última Atualização:*\n` +
+          `> 🤖 Sistema de Botões Interativos adicionados ao menu.\n` +
+          `> ⚡ Agora você pode Capturar Pokémon usando botões.\n` +
+          `> 🎰 Novos botões para Apostar e Investir no RPG.\n` +
+          `> 🛡️ Opções de menus aleatórios para facilitar a navegação.\n` +
+          `> 💸 Sistema de PIX e transferências otimizado.\n\n` +
+          `_Fique de olho, novidades são adicionadas toda semana!_`;
+        
+        return reply(changelog);
+      }
+
+      // Se digitar apenas "!atualizacao", mostra o menu com os 3 botões
+      const botoesAtualizacao = [
+        botaoResposta('🔍 Verificar Atualizações', `${PREFIX}atualizacao verificar`),
+        botaoResposta('📥 Atualizar o Bot', `${PREFIX}atualizacao baixar`),
+        botaoResposta('✨ O que há de novo?', `${PREFIX}atualizacao novidades`)
+      ];
+      
+      await enviarBotoes(client, jid, {
+        titulo: '⚙️ Central de Atualizações',
+        corpo: '🤖 *PAINEL DE CONTROLE DO DONO*\n\nEscolha uma das opções abaixo para gerenciar o seu bot:',
+        rodape: '© Pikachu Bot',
+        botoes: botoesAtualizacao
+      }, msg);
       break;
 
     case 'botoff': await executeBotOff(ctx); break;
@@ -818,4 +869,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-        }
+  }
