@@ -103,6 +103,9 @@ import { executeAutoFechar, executeAtividade, executeInativos, executeRmInativos
 import { executeDespedida, executeSetDespedida, executeAddFiltro, executeDelFiltro, executeFiltros, executeAntiMarcacao, verificarAutomacoes } from './commands/automacao.js';
 import { executePromover, executeRebaixar, executeApagar, executeTodos, executeHidetag } from './commands/cargos.js';
 
+// ================= CONTROLE DE GRUPOS (DONO) =================
+import { executeEntrarGrupo, executeSairGrupo } from './commands/join_leave.js';
+
 // =========================================
 // ANTI-FLOOD
 // =========================================
@@ -426,6 +429,17 @@ export async function handleMessage(client, msg) {
   }
 
   switch (command) {
+    // ================= CONTROLE DE GRUPOS (DONO) =================
+    case 'entrar':
+      if (!ehDono) return reply('❌ Apenas o dono do bot pode usar este comando.');
+      await executeEntrarGrupo(ctx);
+      break;
+
+    case 'sair':
+      if (!ehDono) return reply('❌ Apenas o dono do bot pode usar este comando.');
+      await executeSairGrupo(ctx);
+      break;
+
     // ================= POKÉMON =================
     case 'menupokemon': case 'menupoke': await executeMenuPokemon(ctx); break;
     case 'pokemon': await executePokemon(ctx); break;
@@ -869,4 +883,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-  }
+}
