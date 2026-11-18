@@ -12,7 +12,6 @@ import { handleMessage } from './index.js';
 import { BOT_NAME, OWNER_NUMBER, PREFIX, API_KEY } from './config.js';
 import { iniciarSpawn } from './functions/pokemonSpawn.js';
 import { getGrupo } from './functions/adminDB.js';
-
 import { verificarEntradaListaNegra } from './commands/protecao.js';
 import { verificarEntradaGestao, iniciarAutoFechar } from './commands/gestao.js';
 import { verificarSaidaGrupo } from './commands/automacao.js';
@@ -20,48 +19,92 @@ import { verificarSaidaGrupo } from './commands/automacao.js';
 const execAsync = promisify(exec);
 const logger = pino({ level: 'silent' });
 
-// =========================================
-// CORES DO TERMINAL
-// =========================================
 const colors = {
-  reset: "\x1b[0m",
-  bright: "\x1b[1m",
-  green: "\x1b[32m",
-  yellow: "\x1b[33m",
-  blue: "\x1b[34m",
+  reset:   "\x1b[0m",
+  bright:  "\x1b[1m",
+  green:   "\x1b[32m",
+  yellow:  "\x1b[33m",
+  blue:    "\x1b[34m",
   magenta: "\x1b[35m",
-  cyan: "\x1b[36m",
-  red: "\x1b[31m"
+  cyan:    "\x1b[36m",
+  red:     "\x1b[31m"
 };
 
+function log(cor, emoji, msg) {
+  const hora = new Date().toLocaleTimeString('pt-BR');
+  console.log(`${cor}[${hora}] ${emoji} ${msg}${colors.reset}`);
+}
+
 // =========================================
-// INSTALAÇÃO AUTOMÁTICA DO FFMPEG
+// VERIFICAR FFMPEG
 // =========================================
 async function verificarFFmpeg() {
   try {
     await execAsync('ffmpeg -version');
-    console.log(`${colors.green}✅ FFmpeg já está instalado e funcionando.${colors.reset}`);
-  } catch (error) {
-    console.log(`\n${colors.yellow}⚠️ FFmpeg não encontrado. Tentando instalar automaticamente...${colors.reset}`);
+    log(colors.green, '✅', 'FFmpeg já está instalado.');
+  } catch {
+    log(colors.yellow, '⚠️', 'FFmpeg não encontrado. Tentando instalar...');
     try {
       await execAsync('sudo apt-get update && sudo apt-get install -y ffmpeg', { timeout: 300000 });
-      console.log(`${colors.green}✅ FFmpeg instalado com sucesso!${colors.reset}`);
-    } catch (err1) {
+      log(colors.green, '✅', 'FFmpeg instalado com sucesso!');
+    } catch {
       try {
         await execAsync('pkg install ffmpeg -y', { timeout: 300000 });
-        console.log(`${colors.green}✅ FFmpeg instalado com sucesso (via pkg)!${colors.reset}`);
-      } catch (err2) {
-        console.log(`\n${colors.red}❌ Não foi possível instalar o FFmpeg automaticamente.${colors.reset}`);
+        log(colors.green, '✅', 'FFmpeg instalado via pkg!');
+      } catch {
+        log(colors.red, '❌', 'Não foi possível instalar o FFmpeg automaticamente.');
       }
     }
   }
 }
 
 // =========================================
-// ATUALIZAR O RECADO (STATUS) DO BOT
+// CORRIGIR SHARP INTERNO
+// =========================================
+async function corrigirSharpInterno() {
+  const caminho = './node_modules/wa-sticker-formatter/node_modules/sharp';
+  try {
+    if (fs.existsSync(caminho)) {
+      log(colors.yellow, '🔧', 'Removendo sharp interno quebrado...');
+      await execAsync(`rm -rf ${caminho}`);
+    }
+  } catch {}
+}
+
+// =========================================
+// VERIFICAR DEPENDÊNCIAS
+// =========================================
+async function verificarDependencias() {
+  log(colors.cyan, '🔍', 'Verificando dependências...');
+  for (const pkg of ['node-cron', 'pino', 'simple-git']) {
+    try {
+      await import(pkg);
+    } catch {
+      log(colors.yellow, '⏳', `Instalando ${pkg}...`);
+      try {
+        execSync(`npm install ${pkg}`, { stdio: 'inherit' });
+        log(colors.green, '✅', `${pkg} instalado!`);
+      } catch {
+        log(colors.red, '❌', `Falha ao instalar ${pkg}.`);
+      }
+    }
+  }
+  try { await import('sharp'); } catch {
+    log(colors.yellow, '⚠️', 'Instalando sharp...');
+    try { execSync('npm install sharp', { stdio: 'inherit' }); } catch {}
+  }
+  try { await import('wa-sticker-formatter'); } catch {
+    log(colors.yellow, '⏳', 'Instalando wa-sticker-formatter...');
+    try { execSync('npm install wa-sticker-formatter', { stdio: 'inherit' }); } catch {}
+  }
+  await corrigirSharpInterno();
+}
+
+// =========================================
+// ATUALIZAR RECADO (STATUS)
 // =========================================
 async function atualizarRecado(client) {
-  const recado = "🤖 Freddy Bot | Contato: 55 16 99746-8496";
+  const recado = `🤖 ${BOT_NAME} | Online`;
   setTimeout(async () => {
     try {
       await client.query({
@@ -69,66 +112,15 @@ async function atualizarRecado(client) {
         attrs: { to: '@s.whatsapp.net', type: 'set', xmlns: 'status' },
         content: [{ tag: 'status', attrs: {}, content: Buffer.from(recado, 'utf-8') }],
       });
-      console.log(`${colors.cyan}✅ Recado (Status) do WhatsApp atualizado!${colors.reset}`);
-    } catch (error) {
-      console.error(`${colors.red}❌ Erro ao atualizar recado:${colors.reset}`, error.message);
+      log(colors.cyan, '✅', 'Recado do WhatsApp atualizado!');
+    } catch (e) {
+      log(colors.red, '❌', `Erro ao atualizar recado: ${e.message}`);
     }
-  }, 5000); 
+  }, 5000);
 }
 
 // =========================================
-// CORRIGE O SHARP INTERNO
-// =========================================
-async function corrigirSharpInterno() {
-  const caminhoSharpInterno = './node_modules/wa-sticker-formatter/node_modules/sharp';
-  try {
-    if (fs.existsSync(caminhoSharpInterno)) {
-      console.log(`${colors.yellow}🔧 Removendo sharp interno quebrado...${colors.reset}`);
-      await execAsync(`rm -rf ${caminhoSharpInterno}`);
-    }
-  } catch (error) {}
-}
-
-// =========================================
-// AUTO-DOWNLOAD DE DEPENDÊNCIAS
-// =========================================
-async function verificarDependencias() {
-  console.log(`\n${colors.cyan}🔍 Verificando dependências do sistema...${colors.reset}`);
-  const pacotesBasicos = ['node-cron', 'pino', 'simple-git'];
-
-  for (const pacote of pacotesBasicos) {
-    try {
-      await import(pacote);
-    } catch (error) {
-      console.log(`\n${colors.yellow}⏳ Instalando dependência: ${pacote} (Aguarde)...${colors.reset}`);
-      try {
-        execSync(`npm install ${pacote}`, { stdio: 'inherit' });
-        console.log(`${colors.green}✅ ${pacote} instalado com sucesso!${colors.reset}`);
-      } catch (err) {
-        console.error(`${colors.red}❌ Falha ao instalar ${pacote}.${colors.reset}`);
-      }
-    }
-  }
-
-  try {
-    await import('sharp');
-  } catch (error) {
-    console.log(`\n${colors.yellow}⚠️ Sharp não encontrado. Instalando...${colors.reset}`);
-    try { execSync('npm install sharp', { stdio: 'inherit' }); } catch (err) {}
-  }
-
-  try {
-    await import('wa-sticker-formatter');
-  } catch (error) {
-    console.log(`\n${colors.yellow}⏳ Instalando wa-sticker-formatter...${colors.reset}`);
-    try { execSync('npm install wa-sticker-formatter', { stdio: 'inherit' }); } catch (err) {}
-  }
-
-  await corrigirSharpInterno();
-}
-
-// =========================================
-// EXTRAI JID
+// EXTRAIR JID
 // =========================================
 function extrairJid(p) {
   if (!p) return '';
@@ -138,80 +130,52 @@ function extrairJid(p) {
 }
 
 // =========================================
-// LÊ O NÚMERO ANTIGO DA SESSÃO
+// LÊ NÚMERO SALVO NA SESSÃO
 // =========================================
 function obterNumeroAntigo() {
   const credsPath = './session/creds.json';
-  if (fs.existsSync(credsPath)) {
-    try {
-      const creds = JSON.parse(fs.readFileSync(credsPath, 'utf-8'));
-      if (creds.me && creds.me.id) {
-        return creds.me.id.split('@')[0].split(':')[0];
-      }
-    } catch (e) {}
+  if (!fs.existsSync(credsPath)) return null;
+  try {
+    const creds = JSON.parse(fs.readFileSync(credsPath, 'utf-8'));
+    return creds?.me?.id?.split('@')[0]?.split(':')[0] || null;
+  } catch {
+    return null;
   }
-  return null;
 }
 
 // =========================================
-// MENUS DE CONEXÃO
+// VERIFICAR SE SESSÃO EXISTE
 // =========================================
-async function conectarNovoNumero() {
-  let phone = process.env.PHONE_NUMBER || ''; 
+function sessaoExiste() {
+  return fs.existsSync('./session/creds.json');
+}
 
-  if (!phone) {
-    const rl = readline.createInterface({ input, output });
-    
-    console.log(`\n${colors.cyan}=========================================${colors.reset}`);
-    console.log(`${colors.yellow}𝐇𝐞𝐲𝐲𝐲, 𝐜𝐨𝐦𝐨 𝐠𝐨𝐬𝐭𝐚𝐫𝐢𝐚 𝐝𝐞 𝐜𝐨𝐧𝐞𝐜𝐭𝐚𝐫 𝐨 𝐛𝐨𝐭? 🤔${colors.reset}`);
-    console.log(`${colors.cyan}=========================================${colors.reset}`);
-    console.log(`${colors.green}1${colors.reset} - Gerar Código de Pareamento`);
-    console.log(`${colors.green}2${colors.reset} - Chamar Suporte`);
-    console.log(`${colors.cyan}=========================================\n${colors.reset}`);
-
-    const escolha = await rl.question(`${colors.yellow}Opção:${colors.reset} `);
-    if (escolha.trim() === '2') {
-      console.log(`\n${colors.cyan}📞 SUPORTE: https://wa.me/5511999999999\n${colors.reset}`);
-      rl.close(); process.exit(0);
-    }
-
-    console.log(`\n${colors.cyan}📱 Digite o número (Ex: 5511999999999) ou 0 para voltar:${colors.reset}`);
-    const raw = await rl.question(`${colors.yellow}Número:${colors.reset} `);
-    if (raw.trim() === '0') {
-      rl.close();
-      return startConnect(false);
-    }
-    phone = raw.replace(/\D/g, '');
-    rl.close();
-  } else {
-    console.log(`\n${colors.green}✅ Número obtido via Variável de Ambiente: +${phone}${colors.reset}`);
-  }
-
-  if (phone.length < 10) {
-    console.log(`${colors.red}❌ Número inválido. O bot vai reiniciar.${colors.reset}`);
-    setTimeout(() => startConnect(false), 3000);
-    return;
-  }
-
-  console.log(`\n${colors.yellow}⏳ Iniciando conexão para o número +${phone}...${colors.reset}`);
-
+// =========================================
+// CONECTAR VIA CÓDIGO DE PAREAMENTO
+// =========================================
+async function conectarComCodigo(phone) {
   const sessionPath = './session';
   const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
-  const client = makeWASocket({ auth: state, logger, printQRInTerminal: false });
+  const client = makeWASocket({
+    auth: state,
+    logger,
+    printQRInTerminal: false
+  });
 
-  client.ev.on('connection.update', async (update) => {
-    const { qr, connection } = update;
-    
-    if (qr) {
+  let codigoGerado = false;
+
+  client.ev.on('connection.update', async ({ qr, connection, lastDisconnect }) => {
+    if (qr && !codigoGerado) {
+      codigoGerado = true;
       try {
         const code = await client.requestPairingCode(phone);
-        console.log(`\n${colors.green}=========================================${colors.reset}`);
-        console.log(`${colors.green}✅ SEU CÓDIGO DE PAREAMENTO: ${colors.bright}${colors.yellow}${code}${colors.reset}`);
-        console.log(`${colors.green}=========================================\n${colors.reset}`);
-        console.log(`${colors.cyan}👉 Abra o WhatsApp no celular > Aparelhos Conectados > Conectar com número de telefone > Digite o código acima.${colors.reset}`);
-        console.log(`${colors.red}⚠️ ATENÇÃO: Você tem apenas 1 minuto para digitar este código antes dele expirar!${colors.reset}`);
-      } catch (error) {
-        console.log(`\n${colors.red}❌ ERRO AO GERAR CÓDIGO:${colors.reset}`, error.message);
+        console.log(`\n${colors.green}╔══════════════════════════════════════╗${colors.reset}`);
+        console.log(`${colors.green}║   CÓDIGO DE PAREAMENTO: ${colors.bright}${colors.yellow}${code.padEnd(10)}${colors.reset}${colors.green}   ║${colors.reset}`);
+        console.log(`${colors.green}╚══════════════════════════════════════╝${colors.reset}`);
+        console.log(`${colors.cyan}👉 WhatsApp > Aparelhos Conectados > Conectar com número > Digite o código acima${colors.reset}`);
+        console.log(`${colors.red}⚠️  Você tem 1 minuto para digitar o código!${colors.reset}\n`);
+      } catch (e) {
+        log(colors.red, '❌', `Erro ao gerar código: ${e.message}`);
       }
     }
   });
@@ -220,58 +184,128 @@ async function conectarNovoNumero() {
   configurarListeners(client);
 }
 
-async function conectarSessaoExistente() {
-  const sessionPath = './session';
-  const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
-  const client = makeWASocket({ auth: state, logger, printQRInTerminal: false });
+// =========================================
+// ENTRY POINT PRINCIPAL
+// =========================================
+export async function startConnect(silencioso = false) {
+  await verificarDependencias();
+  await verificarFFmpeg();
 
+  // Reconexão silenciosa: sessão existe e não precisa de menu
+  if (silencioso && sessaoExiste()) {
+    log(colors.yellow, '🔄', 'Reconectando à sessão existente...');
+    return conectarSessaoExistente();
+  }
+
+  // Número via variável de ambiente: pula o menu
+  const phoneEnv = process.env.PHONE_NUMBER?.replace(/\D/g, '');
+  if (phoneEnv && phoneEnv.length >= 10) {
+    log(colors.green, '✅', `Número via variável de ambiente: +${phoneEnv}`);
+    return conectarComCodigo(phoneEnv);
+  }
+
+  // Sessão já existe: reconecta direto sem perguntar
+  if (sessaoExiste()) {
+    const numeroSalvo = obterNumeroAntigo();
+    if (numeroSalvo) {
+      log(colors.green, '📱', `Sessão encontrada para +${numeroSalvo}. Conectando...`);
+    } else {
+      log(colors.green, '📁', 'Sessão encontrada. Conectando...');
+    }
+    return conectarSessaoExistente();
+  }
+
+  // Nenhuma sessão: exibe menu pela primeira vez
+  await exibirMenu();
+}
+
+// =========================================
+// MENU (SÓ APARECE NA PRIMEIRA VEZ)
+// =========================================
+async function exibirMenu() {
+  const rl = readline.createInterface({ input, output });
+
+  console.log(`\n${colors.cyan}╔═══════════════════════════════════════╗${colors.reset}`);
+  console.log(`${colors.cyan}║       BEM-VINDO AO ${BOT_NAME.toUpperCase().padEnd(18)}║${colors.reset}`);
+  console.log(`${colors.cyan}╠═══════════════════════════════════════╣${colors.reset}`);
+  console.log(`${colors.green}║  [1] Conectar via Código de Pareamento║${colors.reset}`);
+  console.log(`${colors.yellow}║  [2] Suporte                          ║${colors.reset}`);
+  console.log(`${colors.cyan}╚═══════════════════════════════════════╝${colors.reset}\n`);
+
+  let escolha = '';
+  while (!['1', '2'].includes(escolha.trim())) {
+    escolha = await rl.question(`${colors.yellow}Escolha uma opção (1 ou 2): ${colors.reset}`);
+  }
+
+  if (escolha.trim() === '2') {
+    console.log(`\n${colors.cyan}📞 Suporte: https://wa.me/5511999999999\n${colors.reset}`);
+    rl.close();
+    process.exit(0);
+  }
+
+  let phone = '';
+  while (phone.length < 10) {
+    const raw = await rl.question(`${colors.cyan}📱 Digite seu número com DDD (Ex: 5511999999999):\n${colors.yellow}Número: ${colors.reset}`);
+    phone = raw.replace(/\D/g, '');
+    if (phone.length < 10) log(colors.red, '❌', 'Número inválido. Tente novamente.');
+  }
+
+  rl.close();
+  log(colors.yellow, '⏳', `Iniciando conexão para +${phone}...`);
+  await conectarComCodigo(phone);
+}
+
+// =========================================
+// CONECTAR COM SESSÃO EXISTENTE
+// =========================================
+async function conectarSessaoExistente() {
+  const { state, saveCreds } = await useMultiFileAuthState('./session');
+  const client = makeWASocket({
+    auth: state,
+    logger,
+    printQRInTerminal: false
+  });
   client.ev.on('creds.update', saveCreds);
   configurarListeners(client);
 }
 
 // =========================================
-// CONFIGURAÇÃO DOS LISTENERS DO CLIENTE
+// LISTENERS PRINCIPAIS
 // =========================================
 function configurarListeners(client) {
   client.ev.on('connection.update', async ({ connection, lastDisconnect }) => {
     if (connection === 'connecting') {
-      console.log(`${colors.yellow}⏳ Conectando ao WhatsApp...${colors.reset}`);
+      log(colors.yellow, '⏳', 'Conectando ao WhatsApp...');
     }
-    
+
     if (connection === 'open') {
-      console.log(`\n${colors.green}=========================================${colors.reset}`);
-      console.log(`${colors.green}🎉 BOT CONECTADO COM SUCESSO!${colors.reset}`);
-      console.log(`${colors.green}=========================================\n${colors.reset}`);
-      
+      console.log(`\n${colors.green}╔══════════════════════════════╗${colors.reset}`);
+      console.log(`${colors.green}║   🎉 BOT CONECTADO!          ║${colors.reset}`);
+      console.log(`${colors.green}╚══════════════════════════════╝\n${colors.reset}`);
       await atualizarRecado(client);
       iniciarSpawn(client);
       iniciarAutoFechar(client);
     }
-    
+
     if (connection === 'close') {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
-      
-      // 🚨 SE FOR BANIDO (403), DESLOGADO (401) OU SESSÃO INVÁLIDA
-      if (
-        statusCode === DisconnectReason.loggedOut || 
-        statusCode === 401 || 
-        statusCode === 403 || 
-        statusCode === DisconnectReason.badSession
-      ) {
-        console.log(`\n${colors.red}❌ SESSÃO EXPIRADA, DESLOGADA OU BANIDA.${colors.reset}`);
-        console.log(`${colors.yellow}Apagando a pasta session... O bot pedirá um novo número.${colors.reset}`);
-        
+      const sessaoInvalida = [
+        DisconnectReason.loggedOut,
+        DisconnectReason.badSession,
+        401,
+        403
+      ].includes(statusCode);
+
+      if (sessaoInvalida) {
+        log(colors.red, '❌', `Sessão encerrada (código ${statusCode}). Apagando sessão...`);
         if (fs.existsSync('./session')) {
           fs.rmSync('./session', { recursive: true, force: true });
         }
-        
-        // Passa 'false' para forçar o menu a aparecer de novo
+        // Sessão apagada: exibe menu para novo número
         setTimeout(() => startConnect(false), 3000);
-      } 
-      // 🔄 SE FOR APENAS QUEDA DE INTERNET/CONEXÃO
-      else {
-        console.log(`${colors.yellow}🔄 Conexão caiu (Motivo: ${statusCode || 'Instabilidade'}). Reconectando automaticamente na mesma sessão...${colors.reset}`);
-        // Passa 'true' para reconectar silenciosamente sem pedir número
+      } else {
+        log(colors.yellow, '🔄', `Conexão perdida (código ${statusCode ?? 'desconhecido'}). Reconectando...`);
+        // Reconecta silenciosamente sem mostrar menu
         setTimeout(() => startConnect(true), 3000);
       }
     }
@@ -281,15 +315,10 @@ function configurarListeners(client) {
     if (type !== 'notify') return;
     for (const msg of messages) {
       if (!msg.message || msg.key.fromMe) continue;
-      
       const isGroup = msg.key.remoteJid.endsWith('@g.us');
       const sender = msg.key.participant || msg.key.remoteJid;
       const pushName = msg.pushName || 'Desconhecido';
-      
-      console.log(`\n${colors.cyan}📥 [NOVA MENSAGEM]${colors.reset}`);
-      console.log(`${colors.yellow}👤 Remetente:${colors.reset} ${pushName} (${sender.split('@')[0]})`);
-      if (isGroup) console.log(`${colors.magenta}👥 Grupo:${colors.reset} ${msg.key.remoteJid.split('@')[0]}`);
-      
+      log(colors.cyan, '📥', `${pushName} (${sender.split('@')[0]})${isGroup ? ` › ${msg.key.remoteJid.split('@')[0]}` : ''}`);
       await handleMessage(client, msg);
     }
   });
@@ -299,18 +328,21 @@ function configurarListeners(client) {
 }
 
 // =========================================
-// LISTENERS DE PARTICIPANTES E ANTI-CALL
+// PARTICIPANTES
 // =========================================
-async function configurarParticipantes(client) {
+function configurarParticipantes(client) {
   client.ev.on('group-participants.update', async (update) => {
     try {
       const { id: grupoJid, participants, action, author } = update;
+
       if (action === 'add') {
         const removidos = await verificarEntradaListaNegra(client, grupoJid, participants);
         await verificarEntradaGestao(client, grupoJid, participants, removidos);
         const restantes = participants.filter(p => !removidos.has(extrairJid(p)));
-        if (restantes.length === 0) return;
+        if (!restantes.length) return;
+
         const configGP = getGrupo(grupoJid);
+
         if (configGP.antiFake) {
           for (const p of restantes) {
             const jid = extrairJid(p);
@@ -319,19 +351,25 @@ async function configurarParticipantes(client) {
             if (!numero.startsWith('55')) {
               try {
                 await client.groupParticipantsUpdate(grupoJid, [jid], 'remove');
-                await client.sendMessage(grupoJid, { text: `🚫 *ANTI-FAKE*\n\n@${numero} foi removido.`, mentions: [jid] });
-              } catch (e) {}
+                await client.sendMessage(grupoJid, {
+                  text: `🚫 *ANTI-FAKE*\n\n@${numero} foi removido por não ter número brasileiro.`,
+                  mentions: [jid]
+                });
+              } catch {}
             }
           }
         }
+
         if (configGP.bemVindo) {
+          const meta = await client.groupMetadata(grupoJid).catch(() => null);
+          const nomeGrupo = meta?.subject || 'o grupo';
           for (const p of restantes) {
             const jid = extrairJid(p);
             if (!jid) continue;
             const nome = jid.split('@')[0].split(':')[0];
-            const meta = await client.groupMetadata(grupoJid).catch(() => null);
-            const nomeGrupo = meta?.subject || 'Grupo';
-            let legenda = configGP.legendaBV.replace(/{nome}/g, `@${nome}`).replace(/{grupo}/g, nomeGrupo);
+            const legenda = configGP.legendaBV
+              .replace(/{nome}/g, `@${nome}`)
+              .replace(/{grupo}/g, nomeGrupo);
             const payload = { text: legenda, mentions: [jid] };
             if (configGP.fotoBV && fs.existsSync(configGP.fotoBV)) {
               payload.image = fs.readFileSync(configGP.fotoBV);
@@ -342,108 +380,44 @@ async function configurarParticipantes(client) {
           }
         }
       }
+
       if (action === 'remove') {
         await verificarSaidaGrupo(client, grupoJid, participants, author);
       }
-    } catch (error) {}
+    } catch {}
   });
 }
 
-async function configurarAntiCall(client) {
+// =========================================
+// ANTI-CALL
+// =========================================
+function configurarAntiCall(client) {
   client.ev.on('call', async (calls) => {
-    const listaCalls = Array.isArray(calls) ? calls : [calls];
-    for (const call of listaCalls) {
-      let groupJid = call.chatId && call.chatId.endsWith('@g.us') ? call.chatId : null;
-      if (!groupJid && call.chatId && call.chatId.endsWith('@call')) {
+    const lista = Array.isArray(calls) ? calls : [calls];
+    for (const call of lista) {
+      let groupJid = call.chatId?.endsWith('@g.us') ? call.chatId : null;
+      if (!groupJid && call.chatId?.endsWith('@call')) {
         try {
-          const todosGrupos = await client.groupFetchAllParticipating();
-          for (const idGrupo in todosGrupos) {
-            const grupo = todosGrupos[idGrupo];
-            const p = grupo.participants.find(p => p.id.split('@')[0].split(':')[0] === call.from.split('@')[0].split(':')[0]);
-            if (p) { groupJid = idGrupo; break; }
+          const grupos = await client.groupFetchAllParticipating();
+          for (const idGrupo in grupos) {
+            const encontrou = grupos[idGrupo].participants.find(
+              p => p.id.split('@')[0].split(':')[0] === call.from.split('@')[0].split(':')[0]
+            );
+            if (encontrou) { groupJid = idGrupo; break; }
           }
-        } catch (e) {}
+        } catch {}
       }
       if (!groupJid) continue;
       const configGP = getGrupo(groupJid);
-      if (configGP && configGP.antiCall === true) {
+      if (configGP?.antiCall) {
         try {
-          const meta = await client.groupMetadata(groupJid);
-          const callerNum = call.from.split('@')[0].split(':')[0];
-          const target = meta.participants.find(p => p.id.split('@')[0].split(':')[0] === callerNum);
-          if (target && !target.admin) {
-            await client.groupParticipantsUpdate(groupJid, [target.id], 'remove');
-            await client.sendMessage(groupJid, { text: `🚫 *ANTI-CALL*\n@${callerNum} removido.`, mentions: [target.id] });
-          }
-        } catch (error) {}
+          await client.groupParticipantsUpdate(groupJid, [call.from], 'remove');
+          await client.sendMessage(groupJid, {
+            text: `📵 *ANTI-CALL*\n\n@${call.from.split('@')[0].split(':')[0]} foi removido por iniciar uma chamada.`,
+            mentions: [call.from]
+          });
+        } catch {}
       }
     }
   });
 }
-
-// =========================================
-// FUNÇÃO PRINCIPAL DE CONEXÃO
-// =========================================
-// O parâmetro `isReconnect` diz se o bot está reiniciando por queda de rede (true) ou ligando do zero (false)
-async function startConnect(isReconnect = false) {
-  if (process.argv.includes('atualizar')) {
-    console.log(`${colors.yellow}🔄 Iniciando atualização via terminal...${colors.reset}`);
-    const { atualizarBot } = await import('./update.js');
-    const res = await atualizarBot();
-    console.log(res.mensagem);
-    process.exit(res.sucesso ? 0 : 1);
-  }
-
-  // Se for reconexão automática, ele pula as verificações pesadas para ser mais rápido
-  if (!isReconnect) {
-    await corrigirSharpInterno();
-    await verificarFFmpeg(); 
-    await verificarDependencias(); 
-  }
-
-  const sessionPath = './session';
-  const sessionExists = fs.existsSync(sessionPath) && fs.readdirSync(sessionPath).length > 0;
-
-  if (sessionExists) {
-    const numeroAntigo = obterNumeroAntigo();
-    if (numeroAntigo) {
-      // ⚡ SE FOR RECONEXÃO AUTOMÁTICA, ELE NÃO PERGUNTA NADA, SÓ CONECTA!
-      if (isReconnect) {
-        console.log(`\n${colors.green}🔄 Reconectando silenciosamente ao número +${numeroAntigo}...${colors.reset}`);
-        await conectarSessaoExistente();
-        return;
-      }
-
-      // Se o bot foi ligado do zero e já tem sessão, pergunta se quer reconectar
-      const rl = readline.createInterface({ input, output });
-      console.log(`\n${colors.cyan}=========================================${colors.reset}`);
-      console.log(`${colors.yellow}🔍 SESSÃO ENCONTRADA!${colors.reset}`);
-      console.log(`${colors.cyan}=========================================${colors.reset}`);
-      console.log(`${colors.yellow}👤 Vimos que você conectou o bot no número recentemente: ${colors.green}+${numeroAntigo}${colors.reset}`);
-      console.log(`\n${colors.green}1${colors.reset} - ✅ Reconectar com este número`);
-      console.log(`${colors.red}2${colors.reset} - 🔄 Conectar um número novo (Apaga a sessão atual)`);
-      
-      const resp = await rl.question(`\n${colors.yellow}Gostaria de reconectar? (1 ou 2):${colors.reset} `);
-      rl.close();
-
-      if (resp.trim() === '2') {
-        console.log(`\n${colors.red}🗑️ Apagando sessão antiga e reiniciando...${colors.reset}`);
-        fs.rmSync(sessionPath, { recursive: true, force: true });
-        await conectarNovoNumero();
-        return;
-      } else {
-        console.log(`\n${colors.green}✅ Reconectando ao número +${numeroAntigo}...${colors.reset}`);
-        await conectarSessaoExistente();
-        return;
-      }
-    } else {
-      await conectarSessaoExistente();
-      return;
-    }
-  }
-
-  // Se não tem sessão nenhuma, vai direto para a tela de pedir o número
-  await conectarNovoNumero();
-}
-
-startConnect(false).catch(console.error);
