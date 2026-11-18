@@ -10,6 +10,9 @@ import { getNomePadraoGlobal, setNomePadraoGlobal } from '../functions/iaGrupoDB
 import fs from 'node:fs';
 import path from 'node:path';
 
+// 🕹️ IMPORTAÇÃO DO SISTEMA DE BOTÕES
+import { enviarBotoes, botaoResposta } from '../functions/botoes.js';
+
 // =========================================
 // ESTADO GLOBAL DO BOT
 // =========================================
@@ -29,120 +32,134 @@ function getFotoMenu(nomeMenu) {
 }
 
 // =========================================
-// MENU DO DONO
+// 🎲 FUNÇÃO PARA GERAR BOTÕES ALEATÓRIOS
+// =========================================
+function gerarBotoesAleatorios(menuAtual) {
+  const menusDisponiveis = [
+    { id: 'menu', text: '🏠 MENU PRINCIPAL' },
+    { id: 'menurg', text: '🗡️ MENU RPG' },
+    { id: 'menugame', text: '🎮 MENU GAME' },
+    { id: 'menupokemon', text: '⚡ MENU POKÉMON' },
+    { id: 'menubaixar', text: '📥 MENU DOWNLOADS' },
+    { id: 'menumembros', text: '👥 MENU MEMBROS' },
+    { id: 'menureligioso', text: '🕊️ MENU RELIGIOSO' },
+    { id: 'menucatolico', text: '⛪ MENU CATÓLICO' },
+    { id: 'menuvip', text: '💎 MENU VIP' }
+  ];
+  const menusFiltrados = menusDisponiveis.filter(m => m.id !== menuAtual);
+  const sorteados = menusFiltrados.sort(() => 0.5 - Math.random()).slice(0, 2);
+  return sorteados.map(m => botaoResposta(m.text, `${PREFIX}${m.id}`));
+}
+
+// =========================================
+// MENU DO DONO (NOVO DESIGN)
 // =========================================
 export async function executeMenuOwner(ctx) {
-  const { reply, sender, client, msg } = ctx;
+  const { reply, sender, client, jid, msg } = ctx;
 
   if (!isOwner(sender)) {
     return reply('❌ Você não tem permissão para acessar este menu.');
   }
 
   const statusAtual = botStatus === 'online'
-    ? '🟢 ONLINE (todos usam)'
-    : '🔒 RESTRITO (só o dono)';
+    ? '🟢 ONLINE'
+    : '🔒 RESTRITO';
 
   const menuText =
-    `╭━━━━━━━〔 👑 𝐌𝐄𝐍𝐔 𝐃𝐎 𝐃𝐎𝐍𝐎 👑 〕━━━━━━━╮\n` +
+    `╭━━━〔 👑 𝗠𝗘𝗡𝗨 𝗗𝗢 𝗗𝗢𝗡𝗢 👑 〕━━━╮\n` +
     `│\n` +
-    `│  👑 *Dono*: ${OWNER_NICK}\n` +
-    `│  📊 *Status*: ${statusAtual}\n` +
+    `│  👑 *Dono:* ${OWNER_NICK}\n` +
+    `│  📊 *Status:* ${statusAtual}\n` +
     `│\n` +
-    `╰━━━━━━━〔 🧸 Freddy Bot 🐻 〕━━━━━━━╯\n` +
-    `\n` +
-    `╭━━━━━━━〔 ⚙️ 𝗕𝗔́𝗦𝗜𝗖𝗢𝗦 ⚙️ 〕━━━━━━━╮\n` +
-    `│  💬 ${PREFIX}say <texto>\n` +
-    `│  🔄 ${PREFIX}reiniciar\n` +
-    `│  🖼️ ${PREFIX}fotomenu <menu>\n` +
-    `│  🏷️ ${PREFIX}nick-dono <nome>\n` +
-    `│  📝 ${PREFIX}setrecado → Forçar recado\n` +
-    `│  ➕ ${PREFIX}addcmd <nome> | <resp>\n` +
-    `│  ➖ ${PREFIX}delcmd <nome>\n` +
-    `│  🤖 ${PREFIX}setnomeia <nome>\n` +
-    `╰━━━━━━━〔 ⚙️ Sistema ⚙️ 〕━━━━━━━╯\n` +
-    `\n` +
-    `╭━━━━━━━〔 👥 𝗖𝗢𝗡𝗧𝗥𝗢𝗟𝗘 𝗗𝗘 𝗚𝗥𝗨𝗣𝗢𝗦 👥 〕━━━━━━━╮\n` +
-    `│  🔗 ${PREFIX}entrar <link>\n` +
-    `│  🚪 ${PREFIX}sair\n` +
-    `│  ☢️ ${PREFIX}nuke → Remover todos\n` +
-    `│  👑 ${PREFIX}seradm → Virar admin\n` +
-    `│  👤 ${PREFIX}sermembro → Virar membro\n` +
-    `╰━━━━━━━〔 👥 Grupos 👥 〕━━━━━━━╯\n` +
-    `\n` +
-    `╭━━━━━━━〔 🔒 𝗔𝗖𝗘𝗦𝗦𝗢 🔒 〕━━━━━━━╮\n` +
-    `│  🔒 ${PREFIX}botoff → Só o dono usa\n` +
-    `│  🟢 ${PREFIX}boton → Liberar para todos\n` +
-    `│  ⏰ ${PREFIX}horariooff <HH:MM> <HH:MM>\n` +
-    `│  👀 ${PREFIX}horariooff ver\n` +
-    `│  ❌ ${PREFIX}horariooff cancelar\n` +
-    `╰━━━━━━━〔 🔐 Acesso 🔐 〕━━━━━━━╯\n` +
-    `\n` +
-    `╭━━━━━━━〔 💎 𝗦𝗜𝗦𝗧𝗘𝗠𝗔 𝗩𝗜𝗣 💎 〕━━━━━━━╮\n` +
-    `│  ➕ ${PREFIX}addvip @user <dias>\n` +
-    `│  ⚙️ ${PREFIX}addcmdvip <cmd>\n` +
-    `│  🗑️ ${PREFIX}rmcmdvip <cmd>\n` +
-    `╰━━━━━━━〔 💎 Gerenciar VIP 💎 〕━━━━━━━╯\n` +
-    `\n` +
-    `╭━━━━━━━〔 📖 𝗔𝗨𝗧𝗢-𝗟𝗘𝗜𝗧𝗨𝗥𝗔 📖 〕━━━━━━━╮\n` +
-    `│  ✅ ${PREFIX}auto-leitura on → Ativar\n` +
-    `│  🛑 ${PREFIX}auto-leitura off → Desativar\n` +
-    `│  👀 ${PREFIX}auto-leitura ver [n] → Ver registros\n` +
-    `│  📊 ${PREFIX}auto-leitura status → Status\n` +
-    `│  🧹 ${PREFIX}auto-leitura limpar → Apagar\n` +
-    `╰━━━━━━━〔 📖 Monitoramento 📖 〕━━━━━━━╯\n` +
-    `\n` +
-    `╭━━━━━━━〔 🛡️ 𝗔𝗡𝗧𝗜-𝗣𝗩 🛡️ 〕━━━━━━━╮\n` +
-    `│  ✅ ${PREFIX}antipv on → Ativar bloqueio\n` +
-    `│  🛑 ${PREFIX}antipv off → Desativar\n` +
-    `╰━━━━━━━〔 🛡️ Anti-PV 🛡️ 〕━━━━━━━╯\n` +
-    `\n` +
-    `╭━━━━━━━〔 🎨 𝗣𝗘𝗥𝗦𝗢𝗡𝗔𝗟𝗜𝗭𝗔𝗖̧𝗔̃𝗢 🎨 〕━━━━━━━╮\n` +
-    `│  🖼️ ${PREFIX}fotomenu <menu>\n` +
-    `│  📸 ${PREFIX}definircmdfoto <cmd>\n` +
-    `│  🗑️ ${PREFIX}rmcmdfoto <cmd>\n` +
-    `│  📋 Menus: menu, admin, game, dono, rpg, membros, baixar, vip, todos\n` +
-    `╰━━━━━━━〔 🎨 Visual 🎨 〕━━━━━━━╯\n` +
-    `\n` +
-    `╭━━━━━━━〔 📢 𝗖𝗔𝗡𝗔𝗟 📢 〕━━━━━━━╮\n` +
-    `│  📢 ${PREFIX}channel <link>\n` +
-    `│  🗑️ ${PREFIX}rmchannel\n` +
-    `╰━━━━━━━〔 📢 Canal 📢 〕━━━━━━━╯\n` +
-    `\n` +
-    `╭━━━━━━━〔 🛡️ 𝗔𝗡𝗧𝗜-𝗙𝗟𝗢𝗢𝗗 🛡️ 〕━━━━━━━╮\n` +
-    `│  🛡️ ${PREFIX}antiflood on/off\n` +
-    `│  ⏱️ ${PREFIX}setdelay <segundos>\n` +
-    `│  📊 ${PREFIX}setlimite <nº>\n` +
-    `╰━━━━━━━〔 🛡️ Anti-Flood 🛡️ 〕━━━━━━━╯\n` +
-    `\n` +
-    `╭━━━━━━━〔 💰 𝗔𝗟𝗨𝗚𝗨𝗘𝗟 💰 〕━━━━━━━╮\n` +
-    `│  💰 ${PREFIX}aluguelglobal on/off\n` +
-    `│  📋 ${PREFIX}aluguel\n` +
-    `│  ➕ ${PREFIX}rg_aluguel <num> <tempo>\n` +
-    `│  🔄 ${PREFIX}rn_aluguel <tempo>\n` +
-    `│  ❌ ${PREFIX}rm_aluguel\n` +
-    `│  🧹 ${PREFIX}listar_alugueis\n` +
-    `│  🗑️ ${PREFIX}limpar_alugueis\n` +
-    `│  ⏱️ Tempos: 10d (dias), 1h (horas), 1a (anos)\n` +
-    `╰━━━━━━━〔 💰 Aluguel 💰 〕━━━━━━━╯\n` +
-    `\n` +
-    `╭━━━━━━━〔 🎮 𝗣𝗢𝗞𝗘́𝗠𝗢𝗡 🎮 〕━━━━━━━╮\n` +
-    `│  ✅ ${PREFIX}ativarspawn\n` +
-    `│  ❌ ${PREFIX}desativarspawn\n` +
-    `╰━━━━━━━〔 🎮 Pokémon 🎮 〕━━━━━━━╯\n` +
-    `\n` +
-    `╭━━━━━━━〔 💸 𝗘𝗖𝗢𝗡𝗢𝗠𝗜𝗔 💸 〕━━━━━━━╮\n` +
-    `│  ➕ ${PREFIX}addcoins @user <valor>\n` +
-    `│  ➖ ${PREFIX}rmcoins @user <valor>\n` +
-    `╰━━━━━━━〔 💸 Economia 💸 〕━━━━━━━╯`;
+    `│  𖹭 ⚙️ 𝗕𝗔́𝗦𝗜𝗖𝗢𝗦 𖹭\n` +
+    `│  ╰┈➤ 💬 ${PREFIX}say <texto>\n` +
+    `│  ╰┈➤ 🔄 ${PREFIX}reiniciar\n` +
+    `│  ╰┈➤ 🖼️ ${PREFIX}fotomenu <menu>\n` +
+    `│  ╰┈➤ 🏷️ ${PREFIX}nick-dono <nome>\n` +
+    `│  ╰┈➤ 📝 ${PREFIX}setrecado\n` +
+    `│  ╰┈➤ ➕ ${PREFIX}addcmd <nome> | <resp>\n` +
+    `│  ╰┈➤ ➖ ${PREFIX}delcmd <nome>\n` +
+    `│  ╰┈➤ 🤖 ${PREFIX}setnomeia <nome>\n` +
+    `│\n` +
+    `│  𖹭 👥 𝗖𝗢𝗡𝗧𝗥𝗢𝗟𝗘 𝗗𝗘 𝗚𝗥𝗨𝗣𝗢𝗦 𖹭\n` +
+    `│  ╰┈➤ 🔗 ${PREFIX}entrar <link>\n` +
+    `│  ╰┈➤ 🚪 ${PREFIX}sair\n` +
+    `│  ╰┈➤ ☢️ ${PREFIX}nuke\n` +
+    `│  ╰┈➤ 👑 ${PREFIX}seradm\n` +
+    `│  ╰┈➤ 👤 ${PREFIX}sermembro\n` +
+    `│\n` +
+    `│  𖹭 🔒 𝗔𝗖𝗘𝗦𝗦𝗢 𖹭\n` +
+    `│  ╰┈➤ 🔒 ${PREFIX}botoff\n` +
+    `│  ╰┈➤ 🟢 ${PREFIX}boton\n` +
+    `│  ╰┈➤ ⏰ ${PREFIX}horariooff <HH:MM> <HH:MM>\n` +
+    `│  ╰┈➤ 👀 ${PREFIX}horariooff ver\n` +
+    `│  ╰┈➤ ❌ ${PREFIX}horariooff cancelar\n` +
+    `│\n` +
+    `│  𖹭 💎 𝗦𝗜𝗦𝗧𝗘𝗠𝗔 𝗩𝗜𝗣 𖹭\n` +
+    `│  ╰┈➤ ➕ ${PREFIX}addvip @user <dias>\n` +
+    `│  ╰┈➤ ⚙️ ${PREFIX}addcmdvip <cmd>\n` +
+    `│  ╰┈➤ 🗑️ ${PREFIX}rmcmdvip <cmd>\n` +
+    `│\n` +
+    `│  𖹭 📖 𝗔𝗨𝗧𝗢-𝗟𝗘𝗜𝗧𝗨𝗥𝗔 𖹭\n` +
+    `│  ╰┈➤ ✅ ${PREFIX}auto-leitura on\n` +
+    `│  ╰┈➤ 🛑 ${PREFIX}auto-leitura off\n` +
+    `│  ╰┈➤ 👀 ${PREFIX}auto-leitura ver [n]\n` +
+    `│  ╰┈➤ 📊 ${PREFIX}auto-leitura status\n` +
+    `│  ╰┈➤ 🧹 ${PREFIX}auto-leitura limpar\n` +
+    `│\n` +
+    `│  𖹭 🛡️ 𝗔𝗡𝗧𝗜-𝗣𝗩 𖹭\n` +
+    `│  ╰┈➤ ✅ ${PREFIX}antipv on\n` +
+    `│  ╰┈➤ 🛑 ${PREFIX}antipv off\n` +
+    `│\n` +
+    `│  𖹭 🎨 𝗣𝗘𝗥𝗦𝗢𝗡𝗔𝗟𝗜𝗭𝗔𝗖̧𝗔̃𝗢 𖹭\n` +
+    `│  ╰┈➤ 🖼️ ${PREFIX}fotomenu <menu>\n` +
+    `│  ╰┈➤ 📸 ${PREFIX}definircmdfoto <cmd>\n` +
+    `│  ╰┈➤ 🗑️ ${PREFIX}rmcmdfoto <cmd>\n` +
+    `│\n` +
+    `│  𖹭 📢 𝗖𝗔𝗡𝗔𝗟 𖹭\n` +
+    `│  ╰┈➤ 📢 ${PREFIX}channel <link>\n` +
+    `│  ╰┈➤ 🗑️ ${PREFIX}rmchannel\n` +
+    `│\n` +
+    `│  𖹭 🛡️ 𝗔𝗡𝗧𝗜-𝗙𝗟𝗢𝗢𝗗 𖹭\n` +
+    `│  ╰┈➤ 🛡️ ${PREFIX}antiflood on/off\n` +
+    `│  ╰┈➤ ⏱️ ${PREFIX}setdelay <segundos>\n` +
+    `│  ╰┈➤ 📊 ${PREFIX}setlimite <nº>\n` +
+    `│\n` +
+    `│  𖹭 💰 𝗔𝗟𝗨𝗚𝗨𝗘𝗟 𖹭\n` +
+    `│  ╰┈➤ 💰 ${PREFIX}aluguelglobal on/off\n` +
+    `│  ╰┈➤ 📋 ${PREFIX}aluguel\n` +
+    `│  ╰┈➤ ➕ ${PREFIX}rg_aluguel <num> <tempo>\n` +
+    `│  ╰┈➤ 🔄 ${PREFIX}rn_aluguel <tempo>\n` +
+    `│  ╰┈➤ ❌ ${PREFIX}rm_aluguel\n` +
+    `│  ╰┈➤ 🧹 ${PREFIX}listar_alugueis\n` +
+    `│  ╰┈➤ 🗑️ ${PREFIX}limpar_alugueis\n` +
+    `│\n` +
+    `│  𖹭 🎮 𝗣𝗢𝗞𝗘́𝗠𝗢𝗡 𖹭\n` +
+    `│  ╰┈➤ ✅ ${PREFIX}ativarspawn\n` +
+    `│  ╰┈➤ ❌ ${PREFIX}desativarspawn\n` +
+    `│\n` +
+    `│  𖹭 💸 𝗘𝗖𝗢𝗡𝗢𝗠𝗜𝗔 𖹭\n` +
+    `│  ╰┈➤ ➕ ${PREFIX}addcoins @user <valor>\n` +
+    `│  ╰┈➤ ➖ ${PREFIX}rmcoins @user <valor>\n` +
+    `│\n` +
+    `╰━━━〔 👑 Painel de Controle 👑 〕━━━╯`;
 
-  const foto = getFotoMenu('dono');
-  if (foto) {
-    return client.sendMessage(msg.key.remoteJid, {
-      image: foto,
-      caption: menuText
-    }, { quoted: msg });
+  const botoes = gerarBotoesAleatorios('menudono');
+
+  try {
+    await enviarBotoes(client, jid, {
+      titulo: '👑 Menu do Dono',
+      corpo: menuText,
+      rodape: '© Pikachu Bot',
+      mencoes: [sender],
+      botoes: botoes
+    }, msg);
+  } catch (e) {
+    console.error('[MENU DONO] Falha ao enviar com botões:', e.message);
+    const foto = getFotoMenu('dono');
+    if (foto) return reply(menuText, { image: foto, mentions: [sender] });
+    return reply(menuText, { mentions: [sender] });
   }
-  return reply(menuText);
 }
 
 // =========================================
@@ -412,4 +429,4 @@ async function salvarConfig(chave, valor, tipo = 'string') {
   } catch (error) {
     console.error('[CONFIG] Erro:', error.message);
   }
-  }
+    }
