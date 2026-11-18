@@ -421,3 +421,8 @@ function configurarAntiCall(client) {
     }
   });
 }
+
+// =========================================
+// INICIALIZAÇÃO DO BOT
+// =========================================
+startConnect().catch(console.error);
