@@ -15,7 +15,8 @@ import { getGrupo } from './functions/adminDB.js';
 import { verificarEntradaListaNegra } from './commands/protecao.js';
 import { verificarEntradaGestao, iniciarAutoFechar } from './commands/gestao.js';
 import { verificarSaidaGrupo } from './commands/automacao.js';
-import { verificarAntiPayment } from './functions/antiPayment.js'; // <-- NOVO IMPORT AQUI
+// IMPORT COM O NOME NOVO (COM ESPAÇO)
+import { verificarAntiPayment } from './functions/anti paymente.js';
 
 const execAsync = promisify(exec);
 const logger = pino({ level: 'silent' });
@@ -36,9 +37,6 @@ function log(cor, emoji, msg) {
   console.log(`${cor}[${hora}] ${emoji} ${msg}${colors.reset}`);
 }
 
-// =========================================
-// VERIFICAR FFMPEG
-// =========================================
 async function verificarFFmpeg() {
   try {
     await execAsync('ffmpeg -version');
@@ -59,9 +57,6 @@ async function verificarFFmpeg() {
   }
 }
 
-// =========================================
-// CORRIGIR SHARP INTERNO
-// =========================================
 async function corrigirSharpInterno() {
   const caminho = './node_modules/wa-sticker-formatter/node_modules/sharp';
   try {
@@ -72,9 +67,6 @@ async function corrigirSharpInterno() {
   } catch {}
 }
 
-// =========================================
-// VERIFICAR DEPENDÊNCIAS
-// =========================================
 async function verificarDependencias() {
   log(colors.cyan, '🔍', 'Verificando dependências...');
   for (const pkg of ['node-cron', 'pino', 'simple-git', 'qrcode-terminal']) {
@@ -101,9 +93,6 @@ async function verificarDependencias() {
   await corrigirSharpInterno();
 }
 
-// =========================================
-// ATUALIZAR RECADO (STATUS)
-// =========================================
 async function atualizarRecado(client) {
   const recado = `🤖 ${BOT_NAME} | Online`;
   setTimeout(async () => {
@@ -120,9 +109,6 @@ async function atualizarRecado(client) {
   }, 5000);
 }
 
-// =========================================
-// EXTRAIR JID
-// =========================================
 function extrairJid(p) {
   if (!p) return '';
   if (typeof p === 'string') return p;
@@ -130,9 +116,6 @@ function extrairJid(p) {
   return String(p);
 }
 
-// =========================================
-// LÊ NÚMERO SALVO NA SESSÃO
-// =========================================
 function obterNumeroAntigo() {
   const credsPath = './session/creds.json';
   if (!fs.existsSync(credsPath)) return null;
@@ -144,16 +127,10 @@ function obterNumeroAntigo() {
   }
 }
 
-// =========================================
-// VERIFICAR SE SESSÃO EXISTE
-// =========================================
 function sessaoExiste() {
   return fs.existsSync('./session/creds.json');
 }
 
-// =========================================
-// CONECTAR VIA CÓDIGO DE PAREAMENTO
-// =========================================
 async function conectarComCodigo(phone) {
   const { state, saveCreds } = await useMultiFileAuthState('./session');
   const client = makeWASocket({
@@ -184,9 +161,6 @@ async function conectarComCodigo(phone) {
   configurarListeners(client);
 }
 
-// =========================================
-// CONECTAR VIA QR CODE
-// =========================================
 async function conectarComQR() {
   const qrcode = (await import('qrcode-terminal')).default;
   const { state, saveCreds } = await useMultiFileAuthState('./session');
@@ -211,27 +185,21 @@ async function conectarComQR() {
   configurarListeners(client);
 }
 
-// =========================================
-// ENTRY POINT PRINCIPAL
-// =========================================
 export async function startConnect(silencioso = false) {
   await verificarDependencias();
   await verificarFFmpeg();
 
-  // Reconexão silenciosa: sessão existe e não precisa de menu
   if (silencioso && sessaoExiste()) {
     log(colors.yellow, '🔄', 'Reconectando à sessão existente...');
     return conectarSessaoExistente();
   }
 
-  // Número via variável de ambiente: pula o menu
   const phoneEnv = process.env.PHONE_NUMBER?.replace(/\D/g, '');
   if (phoneEnv && phoneEnv.length >= 10) {
     log(colors.green, '✅', `Número via variável de ambiente: +${phoneEnv}`);
     return conectarComCodigo(phoneEnv);
   }
 
-  // Sessão já existe: reconecta direto sem perguntar
   if (sessaoExiste()) {
     const numeroSalvo = obterNumeroAntigo();
     if (numeroSalvo) {
@@ -242,13 +210,9 @@ export async function startConnect(silencioso = false) {
     return conectarSessaoExistente();
   }
 
-  // Nenhuma sessão: exibe menu pela primeira vez
   await exibirMenu();
 }
 
-// =========================================
-// MENU (SÓ APARECE NA PRIMEIRA VEZ)
-// =========================================
 async function exibirMenu() {
   const rl = readline.createInterface({ input, output });
 
@@ -278,7 +242,6 @@ async function exibirMenu() {
     return conectarComQR();
   }
 
-  // Opção 1: código de pareamento
   let phone = '';
   while (phone.length < 10) {
     const raw = await rl.question(`${colors.cyan}📱 Digite seu número com DDD (Ex: 5511999999999):\n${colors.yellow}Número: ${colors.reset}`);
@@ -291,9 +254,6 @@ async function exibirMenu() {
   await conectarComCodigo(phone);
 }
 
-// =========================================
-// CONECTAR COM SESSÃO EXISTENTE
-// =========================================
 async function conectarSessaoExistente() {
   const { state, saveCreds } = await useMultiFileAuthState('./session');
   const client = makeWASocket({
@@ -305,9 +265,6 @@ async function conectarSessaoExistente() {
   configurarListeners(client);
 }
 
-// =========================================
-// LISTENERS PRINCIPAIS
-// =========================================
 function configurarListeners(client) {
   client.ev.on('connection.update', async ({ connection, lastDisconnect }) => {
     if (connection === 'connecting') {
@@ -345,15 +302,14 @@ function configurarListeners(client) {
     }
   });
 
-  // 🚨 LISTENER DE MENSAGENS COM A VERIFICAÇÃO ANTI-PAYMENT
   client.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return;
     for (const msg of messages) {
       if (!msg.message || msg.key.fromMe) continue;
 
-      // 🚨 Verifica Anti-Payment ANTES de qualquer outra coisa
+      // 🚨 Verifica Anti-Payment
       const bloqueado = await verificarAntiPayment(client, msg);
-      if (bloqueado) continue; // já tratou, não processa como mensagem normal
+      if (bloqueado) continue;
 
       const isGroup = msg.key.remoteJid.endsWith('@g.us');
       const sender = msg.key.participant || msg.key.remoteJid;
@@ -367,9 +323,6 @@ function configurarListeners(client) {
   configurarAntiCall(client);
 }
 
-// =========================================
-// PARTICIPANTES
-// =========================================
 function configurarParticipantes(client) {
   client.ev.on('group-participants.update', async (update) => {
     try {
@@ -428,9 +381,6 @@ function configurarParticipantes(client) {
   });
 }
 
-// =========================================
-// ANTI-CALL
-// =========================================
 function configurarAntiCall(client) {
   client.ev.on('call', async (calls) => {
     const lista = Array.isArray(calls) ? calls : [calls];
@@ -462,7 +412,4 @@ function configurarAntiCall(client) {
   });
 }
 
-// =========================================
-// START DO BOT
-// =========================================
 startConnect().catch(console.error);
