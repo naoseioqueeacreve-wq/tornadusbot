@@ -29,6 +29,8 @@ export function salvarDB(dados) {
 
 export function getGrupo(grupoJid) {
   const db = lerDB();
+  
+  // Cria o grupo se não existir
   if (!db.grupos[grupoJid]) {
     db.grupos[grupoJid] = {
       antiPalavrao: false,
@@ -38,17 +40,27 @@ export function getGrupo(grupoJid) {
       fotoBV: null,
       botSoAdmins: false,
       antiFake: false,
+      antiBot: false,
+      antiPayment: false,
+      antiPaymentBloqueios: 0, // contador histórico
       mutados: {},
-      warns: {}   // { userJid: [{ motivo, por, em }] }
+      warns: {}
     };
     salvarDB(db);
   }
-  // Garantir campos novos em grupos antigos
-  if (!db.grupos[grupoJid].warns) {
-    db.grupos[grupoJid].warns = {};
-    salvarDB(db);
-  }
-  return db.grupos[grupoJid];
+
+  // Garantir que campos novos existam em grupos antigos (migração automática)
+  let precisaSalvar = false;
+  const g = db.grupos[grupoJid];
+
+  if (!g.warns) { g.warns = {}; precisaSalvar = true; }
+  if (g.antiBot === undefined) { g.antiBot = false; precisaSalvar = true; }
+  if (g.antiPayment === undefined) { g.antiPayment = false; precisaSalvar = true; }
+  if (g.antiPaymentBloqueios === undefined) { g.antiPaymentBloqueios = 0; precisaSalvar = true; }
+
+  if (precisaSalvar) salvarDB(db);
+
+  return g;
 }
 
 export function salvarGrupo(grupoJid, dados) {
@@ -129,6 +141,25 @@ export function setAntiFake(grupoJid, ativo) {
 }
 
 // =========================================
+// ANTI-BOT
+// =========================================
+export function setAntiBot(grupoJid, ativo) {
+  const g = getGrupo(grupoJid);
+  g.antiBot = ativo;
+  salvarGrupo(grupoJid, g);
+}
+
+// =========================================
+// ANTI-PAYMENT
+// =========================================
+export function setAntiPayment(grupoJid, ativo) {
+  const g = getGrupo(grupoJid);
+  g.antiPayment = ativo;
+  salvarGrupo(grupoJid, g);
+  return g.antiPayment;
+}
+
+// =========================================
 // MUTE
 // =========================================
 export function mutarUsuario(grupoJid, userJid) {
@@ -199,33 +230,4 @@ export function listarWarns(grupoJid) {
     quantidade: warns.length,
     warns
   }));
-}
-// =========================================
-// FUNÇÃO: SET ANTI-BOT
-// =========================================
-export function setAntiBot(jid, ativo) {
-  // ATENÇÃO: Se no seu arquivo a função de ler for "loadDB" ou "readDB", troque aqui.
-  // Geralmente se chama "lerDB".
-  const db = lerDB(); 
-  
-  if (!db.grupos) db.grupos = {};
-  if (!db.grupos[jid]) db.grupos[jid] = {};
-  
-  // Atualiza a configuração
-  db.grupos[jid].antiBot = ativo;
-  
-  // ATENÇÃO: Se a função de salvar for "saveDB", troque aqui.
-  salvarDB(db); 
-  
-  return true;
-}
-// Adicione no final do arquivo adminDB.js:
-export function setAntiPayment(jid, ativo) {
-  const db = lerDB(); 
-  if (!db.grupos) db.grupos = {};
-  if (!db.grupos[jid]) db.grupos[jid] = {};
-  
-  db.grupos[jid].antiPayment = ativo;
-  salvarDB(db); 
-  return true;
 }
