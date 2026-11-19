@@ -21,8 +21,8 @@ import { isVIP, isVIPCommand } from './functions/vipDB.js';
 import { getRespostaBotao, enviarBotoes, botaoResposta } from './functions/botoes.js';
 import { executeMenuBotoes, executePing } from './commands/menuBotoes.js';
 
-// SISTEMA ANTI-PAYMENT (NOVA IMPORTAÇÃO)
-import { verificarAntiPayment } from './functions/paymentDefense.js'; // ATENÇÃO: Verifique se o nome é paymentDefense.js ou antiPayment.js
+// SISTEMA ANTI-PAYMENT (IMPORT COM O NOME NOVO)
+import { verificarAntiPayment } from './functions/anti paymente.js';
 
 // SISTEMA IA GRUPO (NOVO)
 import { processarIAGrupo } from './functions/iaGrupoCore.js';
@@ -893,4 +893,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-  }
+        }
