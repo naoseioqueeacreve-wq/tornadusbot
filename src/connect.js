@@ -15,6 +15,7 @@ import { getGrupo } from './functions/adminDB.js';
 import { verificarEntradaListaNegra } from './commands/protecao.js';
 import { verificarEntradaGestao, iniciarAutoFechar } from './commands/gestao.js';
 import { verificarSaidaGrupo } from './commands/automacao.js';
+import { verificarAntiPayment } from './functions/antiPayment.js'; // <-- NOVO IMPORT AQUI
 
 const execAsync = promisify(exec);
 const logger = pino({ level: 'silent' });
@@ -344,10 +345,16 @@ function configurarListeners(client) {
     }
   });
 
+  // 🚨 LISTENER DE MENSAGENS COM A VERIFICAÇÃO ANTI-PAYMENT
   client.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return;
     for (const msg of messages) {
       if (!msg.message || msg.key.fromMe) continue;
+
+      // 🚨 Verifica Anti-Payment ANTES de qualquer outra coisa
+      const bloqueado = await verificarAntiPayment(client, msg);
+      if (bloqueado) continue; // já tratou, não processa como mensagem normal
+
       const isGroup = msg.key.remoteJid.endsWith('@g.us');
       const sender = msg.key.participant || msg.key.remoteJid;
       const pushName = msg.pushName || 'Desconhecido';
