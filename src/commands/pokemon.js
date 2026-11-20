@@ -235,7 +235,7 @@ export async function executeLojaPokebola(ctx) {
 }
 
 // =========================================
-// COMANDO: !comprar <item> [qtd] (COM BOTÕES DE QUANTIDADE)
+// COMANDO: !comprar <item> [qtd] (COM LISTA DE QUANTIDADE)
 // =========================================
 export async function executeComprar(ctx) {
   const { reply, sender, q, client, jid, msg } = ctx;
@@ -253,11 +253,23 @@ export async function executeComprar(ctx) {
 
   const [chave, dados] = item;
 
-  // Se a pessoa ainda NÃO escolheu a quantidade, mostra os botões (agora para qualquer item)
+  // Se a pessoa ainda NÃO escolheu a quantidade, mostra a lista de quantidades
   if (qtd === 0) {
-    const botoesQtd = [1, 2, 3, 4, 5].map(n => 
-      botaoResposta(`🛒 Comprar ${n}x`, `${PREFIX}comprar ${chave} ${n}`)
-    );
+    const secoesQtd = [
+      {
+        titulo: "🛒 𝙌𝙐𝘼𝙉𝙏𝙄𝘿𝘼𝘿𝙀 ↴",
+        linhas: [1, 2, 3, 4, 5].map(n => {
+          const total = dados.preco * n;
+          return {
+            titulo: `🛒 Comprar ${n}x`,
+            descricao: `Total: ${total.toLocaleString('pt-BR')} PokéCoins`,
+            id: `${PREFIX}comprar ${chave} ${n}`
+          };
+        })
+      }
+    ];
+
+    const botoesQtd = [ botaoLista('『 𝑬𝑺𝑪𝑶𝑳𝑯𝑬𝑹 𝑸𝑼𝑨𝑵𝑻𝑰𝑫𝑨𝑫𝑬 』', secoesQtd) ];
     
     const texto = `🛒 *QUANTIDADE*\n\nQuantas *${dados.emoji} ${dados.nome}* você deseja comprar?\n💰 Preço unitário: ${dados.preco.toLocaleString('pt-BR')} PokéCoins`;
     
@@ -500,4 +512,4 @@ export async function executeDesativarSpawn(ctx) {
     return reply('⚠️ O spawn já está desativado *neste grupo*.');
   }
   return reply('🔕 *SPAWN DESATIVADO NESTE GRUPO!*\n\nOs Pokémons não vão mais aparecer aqui.');
-                        }
+      }
