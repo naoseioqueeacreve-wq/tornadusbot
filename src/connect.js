@@ -15,8 +15,7 @@ import { getGrupo } from './functions/adminDB.js';
 import { verificarEntradaListaNegra } from './commands/protecao.js';
 import { verificarEntradaGestao, iniciarAutoFechar } from './commands/gestao.js';
 import { verificarSaidaGrupo } from './commands/automacao.js';
-// IMPORT COM O NOME NOVO (COM ESPAÇO)
-import { verificarAntiPayment } from './functions/anti paymente.js';
+import { verificarAntiPayment } from './functions/antipaymente.js'; // IMPORT CORRETO
 
 const execAsync = promisify(exec);
 const logger = pino({ level: 'silent' });
