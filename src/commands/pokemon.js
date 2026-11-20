@@ -253,13 +253,13 @@ export async function executeComprar(ctx) {
 
   const [chave, dados] = item;
 
-  // Se for pokebola e a pessoa ainda NÃO escolheu a quantidade, mostra os botões
-  if (itemBola && qtd === 0) {
+  // Se a pessoa ainda NÃO escolheu a quantidade, mostra os botões (agora para qualquer item)
+  if (qtd === 0) {
     const botoesQtd = [1, 2, 3, 4, 5].map(n => 
       botaoResposta(`🛒 Comprar ${n}x`, `${PREFIX}comprar ${chave} ${n}`)
     );
     
-    const texto = `🛒 *QUANTIDADE*\n\nQuantas *${dados.emoji} ${dados.nome}* você deseja comprar?\n💰 Preço unitário: ${dados.preco} PokéCoins`;
+    const texto = `🛒 *QUANTIDADE*\n\nQuantas *${dados.emoji} ${dados.nome}* você deseja comprar?\n💰 Preço unitário: ${dados.preco.toLocaleString('pt-BR')} PokéCoins`;
     
     try {
       return await enviarBotoes(client, jid, {
@@ -272,8 +272,8 @@ export async function executeComprar(ctx) {
     }
   }
 
-  // Se for comida ou se já escolheu a quantidade (pokebola)
-  const quantidadeFinal = qtd > 0 ? qtd : 1;
+  // Se a quantidade já foi escolhida, processa a compra
+  const quantidadeFinal = qtd;
   const precoTotal = dados.preco * quantidadeFinal;
 
   if (user.pokecoins < precoTotal) {
@@ -500,4 +500,4 @@ export async function executeDesativarSpawn(ctx) {
     return reply('⚠️ O spawn já está desativado *neste grupo*.');
   }
   return reply('🔕 *SPAWN DESATIVADO NESTE GRUPO!*\n\nOs Pokémons não vão mais aparecer aqui.');
-                                                 }
+                        }
