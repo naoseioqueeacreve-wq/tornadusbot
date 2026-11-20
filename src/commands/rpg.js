@@ -17,7 +17,7 @@ import {
 } from '../functions/rpgJobs.js';
 
 // 🕹️ IMPORTAÇÃO DO SISTEMA DE BOTÕES
-import { enviarBotoes, botaoResposta } from '../functions/botoes.js';
+import { enviarBotoes, botaoLista, botaoResposta } from '../functions/botoes.js';
 
 // =========================================
 // 🎲 FUNÇÃO PARA GERAR BOTÕES DE COMANDOS ALEATÓRIOS
@@ -199,7 +199,7 @@ export async function executeEmpregos(ctx) {
 }
 
 // =========================================
-// !apostar <valor>
+// !apostar <valor> (AGORA COM BOTÃO DE LISTA)
 // =========================================
 export async function executeApostar(ctx) {
   const { reply, sender, q, client, jid, msg } = ctx;
@@ -208,12 +208,19 @@ export async function executeApostar(ctx) {
   const valor = parseInt(q.trim());
 
   if (!valor || valor <= 0) {
-    const botoes = [
-      botaoResposta('💸 100 coins', `${PREFIX}apostar 100`),
-      botaoResposta('💸 250 coins', `${PREFIX}apostar 250`),
-      botaoResposta('💸 500 coins', `${PREFIX}apostar 500`),
-      botaoResposta('💸 1000 coins', `${PREFIX}apostar 1000`)
+    const secoes = [
+      {
+        titulo: "🎰 𝙑𝘼𝙇𝙊𝙍𝙀𝙎 𝘿𝙄𝙎𝙋𝙊𝙉𝙄𝙑𝙀𝙄𝙎 ↴",
+        linhas: [
+          { titulo: "💸 100 coins", descricao: "Apostar 100 coins", id: `${PREFIX}apostar 100` },
+          { titulo: "💸 250 coins", descricao: "Apostar 250 coins", id: `${PREFIX}apostar 250` },
+          { titulo: "💸 500 coins", descricao: "Apostar 500 coins", id: `${PREFIX}apostar 500` },
+          { titulo: "💸 1000 coins", descricao: "Apostar 1000 coins", id: `${PREFIX}apostar 1000` }
+        ]
+      }
     ];
+
+    const botoes = [ botaoLista('『 𝑬𝑺𝑪𝑶𝑳𝑯𝑬𝑹 𝑽𝑨𝑳𝑶𝑹 』', secoes) ];
     
     const texto = `🎰 *APOSTAR*\n\nEscolha um valor para apostar (limite 1000):\n💼 Seu saldo: *${user.coins.toLocaleString('pt-BR')}* coins`;
 
@@ -245,7 +252,7 @@ export async function executeApostar(ctx) {
 }
 
 // =========================================
-// !investir <valor>
+// !investir <valor> (AGORA COM BOTÃO DE LISTA)
 // =========================================
 export async function executeInvestir(ctx) {
   const { reply, sender, q, client, jid, msg } = ctx;
@@ -254,12 +261,19 @@ export async function executeInvestir(ctx) {
   const valor = parseInt(q.trim());
 
   if (!valor || valor <= 0) {
-    const botoes = [
-      botaoResposta('📈 100 coins', `${PREFIX}investir 100`),
-      botaoResposta('📈 250 coins', `${PREFIX}investir 250`),
-      botaoResposta('📈 500 coins', `${PREFIX}investir 500`),
-      botaoResposta('📈 1000 coins', `${PREFIX}investir 1000`)
+    const secoes = [
+      {
+        titulo: "📈 𝙑𝘼𝙇𝙊𝙍𝙀𝙎 𝘿𝙄𝙎𝙋𝙊𝙉𝙄𝙑𝙀𝙄𝙎 ↴",
+        linhas: [
+          { titulo: "📈 100 coins", descricao: "Investir 100 coins", id: `${PREFIX}investir 100` },
+          { titulo: "📈 250 coins", descricao: "Investir 250 coins", id: `${PREFIX}investir 250` },
+          { titulo: "📈 500 coins", descricao: "Investir 500 coins", id: `${PREFIX}investir 500` },
+          { titulo: "📈 1000 coins", descricao: "Investir 1000 coins", id: `${PREFIX}investir 1000` }
+        ]
+      }
     ];
+
+    const botoes = [ botaoLista('『 𝑬𝑺𝑪𝑶𝑳𝑯𝑬𝑹 𝑽𝑨𝑳𝑶𝑹 』', secoes) ];
     
     const texto = `📈 *INVESTIR*\n\nEscolha um valor para investir (limite 1000):\n💼 Seu saldo: *${user.coins.toLocaleString('pt-BR')}* coins`;
 
@@ -745,4 +759,4 @@ export async function executeCasas(ctx) {
   } catch {
     return reply(texto);
   }
-  }
+}
