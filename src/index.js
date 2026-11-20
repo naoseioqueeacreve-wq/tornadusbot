@@ -22,7 +22,7 @@ import { getRespostaBotao, enviarBotoes, botaoResposta } from './functions/botoe
 import { executeMenuBotoes, executePing } from './commands/menuBotoes.js';
 
 // SISTEMA ANTI-PAYMENT (IMPORT COM O NOME NOVO)
-import { verificarAntiPayment } from './functions/anti paymente.js';
+import { verificarAntiPayment } from './functions/antipaymente.js';
 
 // SISTEMA IA GRUPO (NOVO)
 import { processarIAGrupo } from './functions/iaGrupoCore.js';
