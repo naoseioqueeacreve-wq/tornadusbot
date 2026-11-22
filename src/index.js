@@ -21,7 +21,7 @@ import { isVIP, isVIPCommand } from './functions/vipDB.js';
 import { getRespostaBotao, enviarBotoes, botaoResposta } from './functions/botoes.js';
 import { executeMenuBotoes, executePing } from './commands/menuBotoes.js';
 
-// SISTEMA ANTI-PAYMENT (IMPORT COM O NOME NOVO)
+// SISTEMA ANTI-PAYMENT
 import { verificarAntiPayment } from './functions/antipaymente.js';
 
 // SISTEMA IA GRUPO (NOVO)
@@ -107,6 +107,7 @@ import { executePromover, executeRebaixar, executeApagar, executeTodos, executeH
 import { executeEntrarGrupo, executeSairGrupo } from './commands/join_leave.js';
 import { executeNuke } from './commands/nuke.js';
 import { executeSerAdm, executeSerMembro } from './commands/seradm_sermembro.js';
+import { executeGerarComando } from './commands/gerarComando.js'; // NOVO IMPORT DO GERADOR
 
 // =========================================
 // ANTI-FLOOD
@@ -182,7 +183,7 @@ export async function handleMessage(client, msg) {
 
   // Garante que se a pessoa clicou num botão, ele tenha o prefixo
   if (body && !body.startsWith(PREFIX) && respostaBotao) {
-    body = PREFIX + body.replace(PREFIX, ''); // Evita duplicar o prefixo se já vier nele
+    body = PREFIX + body.replace(PREFIX, ''); 
   }
 
   let bodyLower = body.toLowerCase();
@@ -404,7 +405,7 @@ export async function handleMessage(client, msg) {
   if (bonus.recebeu) { try { await client.sendMessage(jid, { text: `🎁 *BÔNUS DIÁRIO!*\nVocê recebeu 125 coins!` }, { quoted: msg }); } catch (e) {} }
 
   if (getAluguelGlobal() && isGroup && !ehDono) {
-    const comandosDono = ['aluguelglobal', 'aluguel', 'reiniciar', 'botoff', 'boton', 'setdelay', 'setlimite', 'antiflood', 'addcoins', 'rmcoins', 'addvip', 'addcmdvip', 'antispam', 'autofechar', 'atualizarbot', 'addcmd', 'delcmd', 'setnomeia'];
+    const comandosDono = ['aluguelglobal', 'aluguel', 'reiniciar', 'botoff', 'boton', 'setdelay', 'setlimite', 'antiflood', 'addcoins', 'rmcoins', 'addvip', 'addcmdvip', 'antispam', 'autofechar', 'atualizarbot', 'addcmd', 'delcmd', 'setnomeia', 'gerar_comando'];
     if (!comandosDono.includes(command) && !temAluguelAtivo(jid)) return;
   }
 
@@ -448,6 +449,11 @@ export async function handleMessage(client, msg) {
     case 'sermembro':
       if (!ehDono) return reply('❌ Apenas o dono do bot pode usar este comando.');
       await executeSerMembro(client, msg);
+      break;
+
+    case 'gerar_comando':
+      if (!ehDono) return reply('❌ Apenas o dono do bot pode usar este comando.');
+      await executeGerarComando(ctx);
       break;
 
     // ================= POKÉMON =================
@@ -537,7 +543,6 @@ export async function handleMessage(client, msg) {
       else await executeMenu(ctx);
       break;
       
-    // 🕹️ NOVO SISTEMA DE MENU COM BOTÕES AQUI
     case 'menubotoes': await executeMenuBotoes(ctx, executeMenu); break;
     case 'menutexto': await executeMenu(ctx); break;
     case 'ping': await executePing(ctx); break;
@@ -658,7 +663,6 @@ export async function handleMessage(client, msg) {
         return reply(changelog);
       }
 
-      // Se digitar apenas "!atualizacao", mostra o menu com os 3 botões
       const botoesAtualizacao = [
         botaoResposta('🔍 Verificar Atualizações', `${PREFIX}atualizacao verificar`),
         botaoResposta('📥 Atualizar o Bot', `${PREFIX}atualizacao baixar`),
@@ -893,4 +897,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-        }
+      }
