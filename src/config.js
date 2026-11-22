@@ -31,3 +31,13 @@ export const GRUPO_SUPORTE = 'seu grupo de suporte aqui';
 // =========================================
 export let ALUGUEL_GLOBAL = false;
 export const DIAS_PADRAO_ALUGUEL = 30;
+
+// =========================================
+// CONFIGURAÇÕES DA API FREELLMAPI
+// =========================================
+// Coloque a sua chave unificada gerada no painel do FreeLLMAPI
+export const FREELLM_API_KEY = 'sua-chave-aqui-do-freellmapi';
+
+// Se estiver usando o serviço hospedado, a URL é essa.
+// Se estiver rodando localmente no seu PC, use 'http://localhost:3001/v1'
+export const FREELLM_BASE_URL = 'https://api.freellmapi.co/v1';
