@@ -36,7 +36,7 @@ export const DIAS_PADRAO_ALUGUEL = 30;
 // CONFIGURAÇÕES DA API FREELLMAPI
 // =========================================
 // Coloque a sua chave unificada gerada no painel do FreeLLMAPI
-export const FREELLM_API_KEY = 'sua-chave-aqui-do-freellmapi';
+export const FREELLM_API_KEY = 'freellmapi-be3e591b57a0ca4901cf156655bcac30030c93e2e9c3974';
 
 // Se estiver usando o serviço hospedado, a URL é essa.
 // Se estiver rodando localmente no seu PC, use 'http://localhost:3001/v1'
