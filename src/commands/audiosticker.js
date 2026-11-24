@@ -4,19 +4,29 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import * as config from '../config.js';
 
 // =========================================
 // FIGURINHA COM ÁUDIO
-// Uso: responda a um áudio com o comando.
-// Áudios com mais de 60s são recortados automaticamente (precisa de ffmpeg).
-// Dica: se enviar uma imagem/figurinha com o comando na legenda
-// (respondendo a um áudio), ela vira a capa da figurinha.
+//  • Responda a um áudio/nota de voz  -> figurinha com o áudio (até 60s, recorta se passar)
+//  • Responda a um vídeo              -> figurinha animada com o som do vídeo (até 10s, recorta se passar)
+//  • Envie uma imagem/figurinha com o comando na legenda, respondendo a um áudio,
+//    para usar como capa.
+// Precisa de ffmpeg (npm install ffmpeg-static) e, para a capa padrão, sharp.
 // =========================================
 
-const MAX_SEGUNDOS = 60;
+const MAX_SEGUNDOS_AUDIO = 60;
+const MAX_SEGUNDOS_VIDEO = 10;
 const CHAVE_PATCH = Symbol.for('yutabot.audioSticker.encoder');
 
-// Figurinha antiga (usada só como último recurso, o link pode expirar)
+// ---- Dados que aparecem no nome da figurinha ----
+// Nome do bot e número do dono são lidos do config.js (ajuste os nomes abaixo se forem outros).
+const NOME_BOT = config.BOT_NAME || 'Bot';
+const NUMERO_DONO =
+  config.OWNER_NUMBER || config.NUMERO_DONO || config.DONO_NUMERO ||
+  config.OWNER_NUMERO || config.DONO || config.OWNER || 'Não informado';
+
+// Figurinha antiga (último recurso, o link pode expirar)
 const FIGURINHA_RESERVA = {
   url: 'https://mmg.whatsapp.net/v/t62.15575-24/914418802_998776306001430_6861763622615627779_n.enc?ccb=11-4&oh=01_Q5Aa6AGUK9fRcG3CtBG_FTfVDGk-sp57A8_C35_nPqvyg3tGTg&oe=6B268895&_nc_sid=5e03e0&mms3=true',
   fileSha256: Buffer.from('l8qenAIPd+CWzPtGGdCaqyrTmzRRUM7xjxxSM96/EYE=', 'base64'),
@@ -31,7 +41,10 @@ const FIGURINHA_RESERVA = {
   isAnimated: false
 };
 
-// Remove capas (ephemeral, viewOnce...) para chegar na mensagem real
+// =========================================
+// UTILITÁRIOS DE MENSAGEM
+// =========================================
+
 function desembrulhar(m = {}) {
   for (let i = 0; i < 5; i++) {
     const interno =
@@ -63,66 +76,165 @@ async function baixar(midia, tipo) {
   return Buffer.concat(partes);
 }
 
+// =========================================
+// FFMPEG
+// =========================================
 
-// Descobre o executável do ffmpeg (sistema ou pacote ffmpeg-static)
+let ffmpegCache = null;
 async function acharFfmpeg() {
+  if (ffmpegCache) return ffmpegCache;
   try {
     const mod = await import('ffmpeg-static');
-    if (mod.default) return mod.default;
+    if (mod.default) return (ffmpegCache = mod.default);
   } catch {}
-  return 'ffmpeg';
+  return (ffmpegCache = 'ffmpeg');
 }
 
-// Recorta o áudio para no máximo `limite` segundos e devolve um ogg/opus
-async function recortarAudio(buffer, limite) {
+async function rodarFfmpeg(args) {
+  const bin = await acharFfmpeg();
+  await new Promise((resolve, reject) => {
+    const p = spawn(bin, ['-y', '-hide_banner', '-loglevel', 'error', ...args]);
+    let erro = '';
+    p.stderr.on('data', d => (erro += d));
+    p.on('error', e => reject(new Error(
+      e.code === 'ENOENT'
+        ? 'ffmpeg não está instalado no servidor (rode: npm install ffmpeg-static).'
+        : e.message
+    )));
+    p.on('close', code => (code === 0 ? resolve() : reject(new Error(erro.trim().slice(-200) || 'ffmpeg falhou'))));
+  });
+}
+
+// Cria arquivos temporários e apaga tudo no final
+async function comTemporarios(buffer, extsSaida, fn) {
   const base = path.join(os.tmpdir(), `audsticker_${randomBytes(6).toString('hex')}`);
   const entrada = `${base}.in`;
-  const saida = `${base}.ogg`;
+  const saidas = extsSaida.map(ext => `${base}.${ext}`);
   await fs.writeFile(entrada, buffer);
-
   try {
-    const ffmpeg = await acharFfmpeg();
-    await new Promise((resolve, reject) => {
-      const p = spawn(ffmpeg, [
-        '-y', '-i', entrada,
-        '-t', String(limite),
-        '-vn', '-ac', '1',
-        '-c:a', 'libopus', '-b:a', '64k',
-        '-f', 'ogg', saida
-      ]);
-      let erro = '';
-      p.stderr.on('data', d => (erro += d));
-      p.on('error', e => reject(new Error(
-        e.code === 'ENOENT'
-          ? 'ffmpeg não está instalado no servidor (rode: npm install ffmpeg-static).'
-          : e.message
-      )));
-      p.on('close', code => (code === 0 ? resolve() : reject(new Error('Falha ao recortar o áudio: ' + erro.slice(-200)))));
-    });
-    return await fs.readFile(saida);
+    return await fn(entrada, saidas);
   } finally {
-    fs.unlink(entrada).catch(() => {});
-    fs.unlink(saida).catch(() => {});
+    for (const f of [entrada, ...saidas]) fs.unlink(f).catch(() => {});
   }
 }
 
-// Onda sonora falsa (o WhatsApp usa para desenhar o áudio como nota de voz)
-function gerarWaveform() {
-  return new Uint8Array(Array.from({ length: 64 }, () => 15 + Math.floor(Math.random() * 70)));
+const ARGS_AUDIO = ['-vn', '-ac', '1', '-c:a', 'libopus', '-b:a', '64k', '-f', 'ogg'];
+
+// Recorta um áudio para no máximo `limite` segundos (ogg/opus)
+async function recortarAudio(buffer, limite) {
+  return comTemporarios(buffer, ['ogg'], async (entrada, [saida]) => {
+    await rodarFfmpeg(['-i', entrada, '-t', String(limite), ...ARGS_AUDIO, saida]);
+    return fs.readFile(saida);
+  });
 }
 
-// Baixa o áudio, recorta, sobe de novo e devolve o audioMessage novo
-async function prepararAudioRecortado(client, audio, limite) {
-  const original = await baixar(audio, 'audio');
-  const recortado = await recortarAudio(original, limite);
-  const prep = await prepareWAMessageMedia(
-    { audio: recortado, mimetype: 'audio/ogg; codecs=opus', ptt: true },
-    { upload: client.waUploadToServer }
-  );
-  return { ...prep.audioMessage, seconds: limite };
+// Vídeo -> { webp animado 512x512, áudio ogg (ou null se o vídeo não tem som) }
+async function processarVideo(buffer, limite) {
+  return comTemporarios(buffer, ['webp', 'ogg'], async (entrada, [webpPath, oggPath]) => {
+    let webp = null;
+    for (const [fps, qualidade] of [[15, 50], [12, 35], [10, 20]]) {
+      await rodarFfmpeg([
+        '-i', entrada, '-t', String(limite), '-an',
+        '-vf', `fps=${fps},scale=512:512:force_original_aspect_ratio=decrease,format=rgba,pad=512:512:-1:-1:color=black@0`,
+        '-c:v', 'libwebp', '-loop', '0', '-q:v', String(qualidade), '-preset', 'default',
+        '-f', 'webp', webpPath
+      ]);
+      webp = await fs.readFile(webpPath);
+      if (webp.length <= 900 * 1024) break; // WhatsApp aceita figurinha animada até ~1MB
+    }
+
+    let ogg = null;
+    try {
+      await rodarFfmpeg(['-i', entrada, '-t', String(limite), ...ARGS_AUDIO, oggPath]);
+      ogg = await fs.readFile(oggPath);
+      if (!ogg.length) ogg = null;
+    } catch {
+      ogg = null; // vídeo sem trilha de áudio
+    }
+    return { webp, ogg };
+  });
 }
 
-// Gera uma capa 512x512 (ícone de áudio) com sharp, se estiver instalado
+// =========================================
+// NOME DA FIGURINHA (EXIF do WebP)
+// =========================================
+
+function montarTextoFigurinha(nomeUsuario) {
+  return [
+    '✨ 𝗙𝗜𝗚𝗨𝗥𝗜𝗡𝗛𝗔 𝗖𝗢𝗠 𝗔́𝗨𝗗𝗜𝗢 ✨',
+    '',
+    `🤖 Criado por: ${NOME_BOT}`,
+    `👑 Número do dono: ${NUMERO_DONO}`,
+    `👤 Quem criou: ${nomeUsuario}`
+  ].join('\n');
+}
+
+function criarExif(nomePack, autor) {
+  const json = Buffer.from(JSON.stringify({
+    'sticker-pack-id': randomBytes(16).toString('hex'),
+    'sticker-pack-name': nomePack,
+    'sticker-pack-publisher': autor,
+    emojis: ['🎧']
+  }), 'utf-8');
+  const cab = Buffer.from([
+    0x49, 0x49, 0x2a, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x57,
+    0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00
+  ]);
+  const exif = Buffer.concat([cab, json]);
+  exif.writeUIntLE(json.length, 14, 4);
+  return exif;
+}
+
+function chunk(id, dados) {
+  const cab = Buffer.alloc(8);
+  cab.write(id, 0, 'ascii');
+  cab.writeUInt32LE(dados.length, 4);
+  return Buffer.concat([cab, dados, dados.length % 2 ? Buffer.alloc(1) : Buffer.alloc(0)]);
+}
+
+// Grava (ou troca) o EXIF dentro de um WebP, sem depender de bibliotecas
+function injetarExif(webp, exif) {
+  if (webp.length < 12 || webp.toString('ascii', 0, 4) !== 'RIFF' || webp.toString('ascii', 8, 12) !== 'WEBP') {
+    return webp;
+  }
+
+  let vp8x = null;
+  let temAlfaImplicito = false;
+  const outros = [];
+  let pos = 12;
+  while (pos + 8 <= webp.length) {
+    const id = webp.toString('ascii', pos, pos + 4);
+    const tam = webp.readUInt32LE(pos + 4);
+    const dados = webp.subarray(pos + 8, pos + 8 + tam);
+    pos += 8 + tam + (tam % 2);
+    if (id === 'VP8X') vp8x = Buffer.from(dados);
+    else if (id === 'EXIF') continue;
+    else {
+      if (id === 'VP8L' || id === 'ALPH') temAlfaImplicito = true;
+      outros.push(chunk(id, dados));
+    }
+  }
+
+  if (vp8x) {
+    vp8x[0] |= 0x08;
+  } else {
+    vp8x = Buffer.alloc(10);
+    vp8x[0] = 0x08 | (temAlfaImplicito ? 0x10 : 0);
+    vp8x.writeUIntLE(512 - 1, 4, 3); // largura
+    vp8x.writeUIntLE(512 - 1, 7, 3); // altura
+  }
+
+  const corpo = Buffer.concat([Buffer.from('WEBP'), chunk('VP8X', vp8x), ...outros, chunk('EXIF', exif)]);
+  const cab = Buffer.alloc(8);
+  cab.write('RIFF', 0, 'ascii');
+  cab.writeUInt32LE(corpo.length, 4);
+  return Buffer.concat([cab, corpo]);
+}
+
+// =========================================
+// CAPA (imagem estática)
+// =========================================
+
 async function gerarCapaPadrao() {
   try {
     const sharp = (await import('sharp')).default;
@@ -145,7 +257,6 @@ async function gerarCapaPadrao() {
   }
 }
 
-// Converte qualquer imagem em webp 512x512
 async function paraWebp512(buffer) {
   const sharp = (await import('sharp')).default;
   return sharp(buffer)
@@ -154,8 +265,7 @@ async function paraWebp512(buffer) {
     .toBuffer();
 }
 
-// Descobre a capa: imagem/figurinha enviada junto > capa padrão > figurinha reserva
-async function obterCapa(client, msgAtual) {
+async function obterCapa(msgAtual) {
   try {
     const m = desembrulhar(msgAtual.message || {});
     if (m.stickerMessage) return await baixar(m.stickerMessage, 'sticker');
@@ -166,12 +276,16 @@ async function obterCapa(client, msgAtual) {
   return await gerarCapaPadrao();
 }
 
-// Sobe a capa para o WhatsApp e devolve o stickerMessage pronto
-async function montarFigurinha(client, webp) {
+// =========================================
+// MONTAGEM DA MENSAGEM
+// =========================================
+
+async function montarFigurinha(client, webp, animada, exif) {
   if (!webp) return { ...FIGURINHA_RESERVA, stickerSentTs: Date.now() };
 
+  const comNome = injetarExif(webp, exif);
   const prep = await prepareWAMessageMedia(
-    { sticker: webp },
+    { sticker: comNome },
     { upload: client.waUploadToServer }
   );
   return {
@@ -179,9 +293,22 @@ async function montarFigurinha(client, webp) {
     mimetype: 'image/webp',
     width: 512,
     height: 512,
-    isAnimated: false,
+    isAnimated: !!animada,
     stickerSentTs: Date.now()
   };
+}
+
+function gerarWaveform() {
+  return new Uint8Array(Array.from({ length: 64 }, () => 15 + Math.floor(Math.random() * 70)));
+}
+
+// Sobe um áudio ogg/opus como nota de voz e devolve o audioMessage
+async function subirAudio(client, ogg, segundos) {
+  const prep = await prepareWAMessageMedia(
+    { audio: ogg, mimetype: 'audio/ogg; codecs=opus', ptt: true },
+    { upload: client.waUploadToServer }
+  );
+  return { ...prep.audioMessage, seconds: Math.max(1, Math.round(segundos)) };
 }
 
 // Ensina o encoder do Baileys a gravar o áudio dentro da figurinha
@@ -218,43 +345,77 @@ function aplicarPatch() {
   Object.defineProperty(Msg, CHAVE_PATCH, { value: true });
 }
 
+// =========================================
+// COMANDO
+// =========================================
+
 export async function executeAudioSticker(ctx) {
-  const { client, msg, jid, reply } = ctx;
+  const { client, msg, jid, reply, pushName } = ctx;
 
   try {
     const atual = desembrulhar(msg.message || {});
     const quoted = desembrulhar(pegarContexto(atual)?.quotedMessage || {});
 
+    // Vídeo respondido, ou vídeo enviado com o comando na legenda (sem áudio respondido)
+    const video = quoted.videoMessage || (!quoted.audioMessage ? atual.videoMessage : null);
     // No WhatsApp, áudio e nota de voz são sempre audioMessage (ptt = true)
     const audio = quoted.audioMessage || atual.audioMessage;
 
-    if (!audio) {
-      return reply('❌ Responda a um *áudio* ou *nota de voz* com o comando para criar a figurinha com som.');
+    if (!video && !audio) {
+      return reply(
+        '❌ Responda a um *áudio*, *nota de voz* ou *vídeo* (até 10s) com o comando para criar a figurinha com som.'
+      );
     }
-
-    const segundos = Number(audio.seconds) || 0;
 
     await client.sendMessage(jid, { react: { text: '⏳', key: msg.key } }).catch(() => {});
-
     aplicarPatch();
 
-    const capa = await obterCapa(client, msg);
-    const figurinha = await montarFigurinha(client, capa);
+    const nomeUsuario = pushName || 'Usuário';
+    const exif = criarExif(montarTextoFigurinha(nomeUsuario), NOME_BOT);
 
-    const midia = proto.Message.fromObject({ stickerMessage: figurinha });
+    let figurinha;
+    let audioFinal;
 
-    // Se passar do limite, recorta; senão usa o áudio original (sem contextInfo)
-    let audioFinal = { ...audio, contextInfo: undefined };
-    if (segundos > MAX_SEGUNDOS) {
-      audioFinal = await prepararAudioRecortado(client, audio, MAX_SEGUNDOS);
+    if (video) {
+      // ---------- VÍDEO -> figurinha animada + som do vídeo ----------
+      const segVideo = Number(video.seconds) || 0;
+      const limite = segVideo > 0 ? Math.min(segVideo, MAX_SEGUNDOS_VIDEO) : MAX_SEGUNDOS_VIDEO;
+
+      const bufferVideo = await baixar(video, 'video');
+      const { webp, ogg } = await processarVideo(bufferVideo, MAX_SEGUNDOS_VIDEO);
+
+      if (!ogg) {
+        await client.sendMessage(jid, { react: { text: '❌', key: msg.key } }).catch(() => {});
+        return reply('❌ Esse vídeo não tem áudio. Use um vídeo com som para criar a figurinha.');
+      }
+
+      figurinha = await montarFigurinha(client, webp, true, exif);
+      audioFinal = await subirAudio(client, ogg, limite);
+    } else {
+      // ---------- ÁUDIO -> figurinha com capa ----------
+      const segundos = Number(audio.seconds) || 0;
+
+      const capa = await obterCapa(msg);
+      figurinha = await montarFigurinha(client, capa, false, exif);
+
+      if (segundos > MAX_SEGUNDOS_AUDIO) {
+        const recortado = await recortarAudio(await baixar(audio, 'audio'), MAX_SEGUNDOS_AUDIO);
+        audioFinal = await subirAudio(client, recortado, MAX_SEGUNDOS_AUDIO);
+      } else {
+        audioFinal = { ...audio, contextInfo: undefined, seconds: segundos || 1 };
+        if (!audioFinal.mimetype) audioFinal.mimetype = 'audio/ogg; codecs=opus';
+      }
     }
+
     // Figurinha com som só toca como nota de voz (ptt)
     audioFinal.ptt = true;
-    audioFinal.waveform = audioFinal.waveform?.length ? audioFinal.waveform : gerarWaveform();
-    audioFinal.seconds = audioFinal.seconds || segundos || 1;
-    if (!audioFinal.mimetype) audioFinal.mimetype = 'audio/ogg; codecs=opus';
+    if (!audioFinal.waveform?.length) audioFinal.waveform = gerarWaveform();
+
+    const midia = proto.Message.fromObject({ stickerMessage: figurinha });
     midia.stickerMessage.audioMessage = audioFinal;
+
     console.log('[audiosticker] áudio:', {
+      origem: video ? 'video' : 'audio',
       seconds: audioFinal.seconds, ptt: audioFinal.ptt, mimetype: audioFinal.mimetype,
       temUrl: !!(audioFinal.url || audioFinal.directPath), temChave: !!audioFinal.mediaKey
     });
