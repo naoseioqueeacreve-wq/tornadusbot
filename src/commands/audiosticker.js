@@ -106,15 +106,20 @@ async function recortarAudio(buffer, limite) {
   }
 }
 
+// Onda sonora falsa (o WhatsApp usa para desenhar o áudio como nota de voz)
+function gerarWaveform() {
+  return new Uint8Array(Array.from({ length: 64 }, () => 15 + Math.floor(Math.random() * 70)));
+}
+
 // Baixa o áudio, recorta, sobe de novo e devolve o audioMessage novo
 async function prepararAudioRecortado(client, audio, limite) {
   const original = await baixar(audio, 'audio');
   const recortado = await recortarAudio(original, limite);
   const prep = await prepareWAMessageMedia(
-    { audio: recortado, mimetype: 'audio/ogg; codecs=opus', ptt: !!audio.ptt },
+    { audio: recortado, mimetype: 'audio/ogg; codecs=opus', ptt: true },
     { upload: client.waUploadToServer }
   );
-  return { ...prep.audioMessage, seconds: limite, ptt: !!audio.ptt };
+  return { ...prep.audioMessage, seconds: limite };
 }
 
 // Gera uma capa 512x512 (ícone de áudio) com sharp, se estiver instalado
@@ -243,7 +248,16 @@ export async function executeAudioSticker(ctx) {
     if (segundos > MAX_SEGUNDOS) {
       audioFinal = await prepararAudioRecortado(client, audio, MAX_SEGUNDOS);
     }
+    // Figurinha com som só toca como nota de voz (ptt)
+    audioFinal.ptt = true;
+    audioFinal.waveform = audioFinal.waveform?.length ? audioFinal.waveform : gerarWaveform();
+    audioFinal.seconds = audioFinal.seconds || segundos || 1;
+    if (!audioFinal.mimetype) audioFinal.mimetype = 'audio/ogg; codecs=opus';
     midia.stickerMessage.audioMessage = audioFinal;
+    console.log('[audiosticker] áudio:', {
+      seconds: audioFinal.seconds, ptt: audioFinal.ptt, mimetype: audioFinal.mimetype,
+      temUrl: !!(audioFinal.url || audioFinal.directPath), temChave: !!audioFinal.mediaKey
+    });
 
     await client.relayMessage(
       jid,
