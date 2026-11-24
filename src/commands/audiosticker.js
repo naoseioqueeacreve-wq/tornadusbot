@@ -8,10 +8,11 @@ import * as config from '../config.js';
 
 // =========================================
 // FIGURINHA COM ÁUDIO
-//  • Responda a um áudio/nota de voz  -> figurinha com o áudio (até 60s, recorta se passar)
-//  • Responda a um vídeo              -> figurinha animada com o som do vídeo (até 10s, recorta se passar)
-//  • Envie uma imagem/figurinha com o comando na legenda, respondendo a um áudio,
-//    para usar como capa.
+//  /audiosticker      -> responda a um áudio OU a um vídeo
+//  /audiosticker 1    -> usa o ÁUDIO QUE VOCÊ MARCOU (responda a um áudio e envie/anexe um vídeo, ou só o áudio)
+//  /audiosticker 2    -> usa o ÁUDIO DO VÍDEO
+//  O vídeo (até 10s, recorta se passar) vira a figurinha animada; sem vídeo, usa uma capa
+//  (imagem/figurinha enviada junto, ou a capa padrão). Áudio marcado: até 60s (recorta se passar).
 // Precisa de ffmpeg (npm install ffmpeg-static) e, para a capa padrão, sharp.
 // =========================================
 
@@ -129,7 +130,7 @@ async function recortarAudio(buffer, limite) {
 }
 
 // Vídeo -> { webp animado 512x512, áudio ogg (ou null se o vídeo não tem som) }
-async function processarVideo(buffer, limite) {
+async function processarVideo(buffer, limite, extrairAudio = true) {
   return comTemporarios(buffer, ['webp', 'ogg'], async (entrada, [webpPath, oggPath]) => {
     let webp = null;
     for (const [fps, qualidade] of [[15, 50], [12, 35], [10, 20]]) {
@@ -144,6 +145,7 @@ async function processarVideo(buffer, limite) {
     }
 
     let ogg = null;
+    if (!extrairAudio) return { webp, ogg };
     try {
       await rodarFfmpeg(['-i', entrada, '-t', String(limite), ...ARGS_AUDIO, oggPath]);
       ogg = await fs.readFile(oggPath);
@@ -294,7 +296,11 @@ async function montarFigurinha(client, webp, animada, exif) {
     width: 512,
     height: 512,
     isAnimated: !!animada,
-    stickerSentTs: Date.now()
+    contextInfo: {},
+    stickerSentTs: Date.now(),
+    isAvatar: false,
+    isAiSticker: false,
+    isLottie: false
   };
 }
 
@@ -350,21 +356,42 @@ function aplicarPatch() {
 // =========================================
 
 export async function executeAudioSticker(ctx) {
-  const { client, msg, jid, reply, pushName } = ctx;
+  const { client, msg, jid, reply, pushName, args = [] } = ctx;
 
   try {
     const atual = desembrulhar(msg.message || {});
     const quoted = desembrulhar(pegarContexto(atual)?.quotedMessage || {});
 
-    // Vídeo respondido, ou vídeo enviado com o comando na legenda (sem áudio respondido)
-    const video = quoted.videoMessage || (!quoted.audioMessage ? atual.videoMessage : null);
-    // No WhatsApp, áudio e nota de voz são sempre audioMessage (ptt = true)
-    const audio = quoted.audioMessage || atual.audioMessage;
+    // Vídeo = visual da figurinha (anexado agora ou respondido)
+    const video = atual.videoMessage || quoted.videoMessage || null;
+    // Áudio que a pessoa marcou (respondeu)
+    const audioMarcado = quoted.audioMessage || atual.audioMessage || null;
 
-    if (!video && !audio) {
+    // Escolha: 1 = áudio marcado | 2 = áudio do vídeo
+    const escolhaTxt = String(args[0] ?? '').trim();
+    let escolha = escolhaTxt === '1' ? 1 : escolhaTxt === '2' ? 2 : 0;
+
+    if (!video && !audioMarcado) {
       return reply(
-        '❌ Responda a um *áudio*, *nota de voz* ou *vídeo* (até 10s) com o comando para criar a figurinha com som.'
+        '❌ *Como usar:*\n' +
+        '• Responda a um *áudio* com o comando\n' +
+        '• Responda a um *vídeo* (até 10s) com o comando\n' +
+        '• Responda a um áudio e anexe um *vídeo* com:\n' +
+        '   *1* → usa o áudio que você marcou\n' +
+        '   *2* → usa o áudio do vídeo'
       );
+    }
+
+    if (escolhaTxt && !escolha) {
+      return reply('❌ Opção inválida. Use *1* (áudio que você marcou) ou *2* (áudio do vídeo).');
+    }
+    if (!escolha) escolha = audioMarcado ? 1 : 2; // padrão
+
+    if (escolha === 1 && !audioMarcado) {
+      return reply('❌ Para usar a opção *1*, responda (marque) um *áudio*.');
+    }
+    if (escolha === 2 && !video) {
+      return reply('❌ Para usar a opção *2*, envie ou responda a um *vídeo* com som.');
     }
 
     await client.sendMessage(jid, { react: { text: '⏳', key: msg.key } }).catch(() => {});
@@ -373,49 +400,58 @@ export async function executeAudioSticker(ctx) {
     const nomeUsuario = pushName || 'Usuário';
     const exif = criarExif(montarTextoFigurinha(nomeUsuario), NOME_BOT);
 
+    // ---------- VISUAL DA FIGURINHA ----------
     let figurinha;
-    let audioFinal;
+    let oggDoVideo = null;
+    let segundosVideo = MAX_SEGUNDOS_VIDEO;
 
     if (video) {
-      // ---------- VÍDEO -> figurinha animada + som do vídeo ----------
       const segVideo = Number(video.seconds) || 0;
-      const limite = segVideo > 0 ? Math.min(segVideo, MAX_SEGUNDOS_VIDEO) : MAX_SEGUNDOS_VIDEO;
+      segundosVideo = segVideo > 0 ? Math.min(segVideo, MAX_SEGUNDOS_VIDEO) : MAX_SEGUNDOS_VIDEO;
 
-      const bufferVideo = await baixar(video, 'video');
-      const { webp, ogg } = await processarVideo(bufferVideo, MAX_SEGUNDOS_VIDEO);
+      const { webp, ogg } = await processarVideo(
+        await baixar(video, 'video'),
+        MAX_SEGUNDOS_VIDEO,
+        escolha === 2
+      );
+      oggDoVideo = ogg;
 
-      if (!ogg) {
+      if (escolha === 2 && !ogg) {
         await client.sendMessage(jid, { react: { text: '❌', key: msg.key } }).catch(() => {});
-        return reply('❌ Esse vídeo não tem áudio. Use um vídeo com som para criar a figurinha.');
+        return reply('❌ Esse vídeo não tem áudio. Marque um áudio e use a opção *1*, ou use um vídeo com som.');
       }
-
       figurinha = await montarFigurinha(client, webp, true, exif);
-      audioFinal = await subirAudio(client, ogg, limite);
     } else {
-      // ---------- ÁUDIO -> figurinha com capa ----------
-      const segundos = Number(audio.seconds) || 0;
-
       const capa = await obterCapa(msg);
       figurinha = await montarFigurinha(client, capa, false, exif);
+    }
 
+    // ---------- ÁUDIO DA FIGURINHA ----------
+    let audioFinal;
+
+    if (escolha === 2) {
+      audioFinal = await subirAudio(client, oggDoVideo, segundosVideo);
+    } else {
+      const segundos = Number(audioMarcado.seconds) || 0;
       if (segundos > MAX_SEGUNDOS_AUDIO) {
-        const recortado = await recortarAudio(await baixar(audio, 'audio'), MAX_SEGUNDOS_AUDIO);
+        const recortado = await recortarAudio(await baixar(audioMarcado, 'audio'), MAX_SEGUNDOS_AUDIO);
         audioFinal = await subirAudio(client, recortado, MAX_SEGUNDOS_AUDIO);
       } else {
-        audioFinal = { ...audio, contextInfo: undefined, seconds: segundos || 1 };
+        audioFinal = { ...audioMarcado, contextInfo: undefined, seconds: segundos || 1 };
         if (!audioFinal.mimetype) audioFinal.mimetype = 'audio/ogg; codecs=opus';
       }
     }
 
-    // Figurinha com som só toca como nota de voz (ptt)
+    // Figurinha com som toca como nota de voz (ptt)
     audioFinal.ptt = true;
     if (!audioFinal.waveform?.length) audioFinal.waveform = gerarWaveform();
 
     const midia = proto.Message.fromObject({ stickerMessage: figurinha });
     midia.stickerMessage.audioMessage = audioFinal;
 
-    console.log('[audiosticker] áudio:', {
-      origem: video ? 'video' : 'audio',
+    console.log('[audiosticker] envio:', {
+      visual: video ? 'video' : 'capa',
+      audio: escolha === 1 ? 'marcado' : 'do-video',
       seconds: audioFinal.seconds, ptt: audioFinal.ptt, mimetype: audioFinal.mimetype,
       temUrl: !!(audioFinal.url || audioFinal.directPath), temChave: !!audioFinal.mediaKey
     });
