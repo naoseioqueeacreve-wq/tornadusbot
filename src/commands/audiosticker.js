@@ -6,22 +6,21 @@ export async function executeAudioSticker(ctx) {
   try {
     const { randomBytes } = await import('node:crypto');
 
-    // Pega o contexto da mensagem para ver se tem áudio citado
+    // Pega o contexto da mensagem para ver se tem áudio ou imagem citada
     const ctxInfo = msg.message?.extendedTextMessage?.contextInfo || 
                     msg.message?.imageMessage?.contextInfo || 
-                    msg.message?.videoMessage?.contextInfo || 
-                    msg.message?.audioMessage?.contextInfo;
+                    msg.message?.videoMessage?.contextInfo;
+                    
+    const quotedMsg = ctxInfo?.quotedMessage;
 
-    const quotedAudio = ctxInfo?.quotedMessage?.audioMessage;
-    const directAudio = msg.message?.audioMessage;
-    
-    const audio = quotedAudio || directAudio;
+    // Tenta pegar o áudio (pode ser o citado ou o que a pessoa mandou junto)
+    const audio = quotedMsg?.audioMessage || msg.message?.audioMessage;
 
     if (!audio) {
       return reply('❌ Marque um áudio para criar a figurinha com som.');
     }
 
-    // Payload base da figurinha (necessário para o hack de áudio)
+    // Payload base da figurinha (Necessário para o hack de áudio do WhatsApp)
     const figurinha = {
       url: 'https://mmg.whatsapp.net/v/t62.15575-24/914418802_998776306001430_6861763622615627779_n.enc?ccb=11-4&oh=01_Q5Aa6AGUK9fRcG3CtBG_FTfVDGk-sp57A8_C35_nPqvyg3tGTg&oe=6B268895&_nc_sid=5e03e0&mms3=true',
       fileSha256: Buffer.from('l8qenAIPd+CWzPtGGdCaqyrTmzRRUM7xjxxSM96/EYE=', 'base64'),
@@ -45,7 +44,7 @@ export async function executeAudioSticker(ctx) {
     const mensagemProto = midia.constructor;
     const chavePatch = Symbol.for('yutabot.audioSticker.encoder');
 
-    // Verifica se a versão do Baileys possui os tipos necessários
+    // Verifica se a versão da Baileys possui os tipos necessários
     if (
       typeof mensagemProto.encode !== 'function' ||
       typeof mensagemProto.FutureProofMessage?.encode !== 'function' ||
