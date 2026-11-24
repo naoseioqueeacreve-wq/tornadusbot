@@ -1,9 +1,14 @@
 import { proto, prepareWAMessageMedia, downloadContentFromMessage } from '@whiskeysockets/baileys';
 import { randomBytes } from 'node:crypto';
+import { spawn } from 'node:child_process';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 
 // =========================================
 // FIGURINHA COM ÁUDIO
 // Uso: responda a um áudio com o comando.
+// Áudios com mais de 60s são recortados automaticamente (precisa de ffmpeg).
 // Dica: se enviar uma imagem/figurinha com o comando na legenda
 // (respondendo a um áudio), ela vira a capa da figurinha.
 // =========================================
@@ -56,6 +61,60 @@ async function baixar(midia, tipo) {
   const partes = [];
   for await (const parte of stream) partes.push(parte);
   return Buffer.concat(partes);
+}
+
+
+// Descobre o executável do ffmpeg (sistema ou pacote ffmpeg-static)
+async function acharFfmpeg() {
+  try {
+    const mod = await import('ffmpeg-static');
+    if (mod.default) return mod.default;
+  } catch {}
+  return 'ffmpeg';
+}
+
+// Recorta o áudio para no máximo `limite` segundos e devolve um ogg/opus
+async function recortarAudio(buffer, limite) {
+  const base = path.join(os.tmpdir(), `audsticker_${randomBytes(6).toString('hex')}`);
+  const entrada = `${base}.in`;
+  const saida = `${base}.ogg`;
+  await fs.writeFile(entrada, buffer);
+
+  try {
+    const ffmpeg = await acharFfmpeg();
+    await new Promise((resolve, reject) => {
+      const p = spawn(ffmpeg, [
+        '-y', '-i', entrada,
+        '-t', String(limite),
+        '-vn', '-ac', '1',
+        '-c:a', 'libopus', '-b:a', '64k',
+        '-f', 'ogg', saida
+      ]);
+      let erro = '';
+      p.stderr.on('data', d => (erro += d));
+      p.on('error', e => reject(new Error(
+        e.code === 'ENOENT'
+          ? 'ffmpeg não está instalado no servidor (rode: npm install ffmpeg-static).'
+          : e.message
+      )));
+      p.on('close', code => (code === 0 ? resolve() : reject(new Error('Falha ao recortar o áudio: ' + erro.slice(-200)))));
+    });
+    return await fs.readFile(saida);
+  } finally {
+    fs.unlink(entrada).catch(() => {});
+    fs.unlink(saida).catch(() => {});
+  }
+}
+
+// Baixa o áudio, recorta, sobe de novo e devolve o audioMessage novo
+async function prepararAudioRecortado(client, audio, limite) {
+  const original = await baixar(audio, 'audio');
+  const recortado = await recortarAudio(original, limite);
+  const prep = await prepareWAMessageMedia(
+    { audio: recortado, mimetype: 'audio/ogg; codecs=opus', ptt: !!audio.ptt },
+    { upload: client.waUploadToServer }
+  );
+  return { ...prep.audioMessage, seconds: limite, ptt: !!audio.ptt };
 }
 
 // Gera uma capa 512x512 (ícone de áudio) com sharp, se estiver instalado
@@ -169,9 +228,6 @@ export async function executeAudioSticker(ctx) {
     }
 
     const segundos = Number(audio.seconds) || 0;
-    if (segundos > MAX_SEGUNDOS) {
-      return reply(`❌ O áudio é muito longo (${segundos}s). O limite é de *${MAX_SEGUNDOS}s*.`);
-    }
 
     await client.sendMessage(jid, { react: { text: '⏳', key: msg.key } }).catch(() => {});
 
@@ -182,8 +238,12 @@ export async function executeAudioSticker(ctx) {
 
     const midia = proto.Message.fromObject({ stickerMessage: figurinha });
 
-    // Copia o áudio sem o contextInfo (evita mostrar "respondendo a...")
-    midia.stickerMessage.audioMessage = { ...audio, contextInfo: undefined };
+    // Se passar do limite, recorta; senão usa o áudio original (sem contextInfo)
+    let audioFinal = { ...audio, contextInfo: undefined };
+    if (segundos > MAX_SEGUNDOS) {
+      audioFinal = await prepararAudioRecortado(client, audio, MAX_SEGUNDOS);
+    }
+    midia.stickerMessage.audioMessage = audioFinal;
 
     await client.relayMessage(
       jid,
