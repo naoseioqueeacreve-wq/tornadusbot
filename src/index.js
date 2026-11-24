@@ -54,7 +54,7 @@ import { executeAntiPalavrao, executeAddPalavra, executeDelPalavra, executeLista
 import { executePlayVideo, executePinterest as executePinterestAntigo, executeAnimal, executePlaylistSpotify } from './commands/pesquisas.js';
 import { executeYtmp3, executeYtmp4, executeSnapchat, executeGdrive, executeReddit } from './commands/baixar.js';
 import { executeSticker, executeTake, executeBrat, executeBratVerde, executeBratVideo } from './commands/stickers.js';
-import { executeAudioSticker } from './commands/audiosticker.js'; // <-- NOVO IMPORT DE AUDIOSTICKER AQUI
+import { executeAudioSticker } from './commands/audiosticker.js'; 
 import { executeToImage } from './commands/toimage.js'; 
 import { executeToGif } from './commands/togif.js';
 import { executeIA, executeIAModo, executeIALimpar, estaNoModoIA, responderAutomatico } from './commands/ia.js';
@@ -566,7 +566,7 @@ export async function handleMessage(client, msg) {
     case 'iamodo': await executeIAModo(ctx); break;
     case 'ialimpar': await executeIALimpar(ctx); break;
     case 's': case 'sticker': case 'fig': await executeSticker(ctx); break;
-    case 'audiosticker': case 'figurinhasom': await executeAudioSticker(ctx); break; // <-- NOVO CASE AQUI
+    case 'audiosticker': case 'figurinhasom': await executeAudioSticker(ctx); break; // <-- AQUI ESTÁ O CASE
     case 'toimage': case 'toimg': await executeToImage(ctx); break; 
     case 'togif': case 'gif': await executeToGif(ctx); break; 
     case 'take': case 'rename': await executeTake(ctx); break;
@@ -897,4 +897,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-                                                               }
+        }
