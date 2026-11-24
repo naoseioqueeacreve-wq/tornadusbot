@@ -136,7 +136,7 @@ async function processarVideo(buffer, limite, extrairAudio = true) {
     for (const [fps, qualidade] of [[15, 50], [12, 35], [10, 20]]) {
       await rodarFfmpeg([
         '-i', entrada, '-t', String(limite), '-an',
-        '-vf', `fps=${fps},scale=512:512:force_original_aspect_ratio=decrease,format=rgba,pad=512:512:-1:-1:color=black@0`,
+        '-vf', `fps=${fps},scale=512:512:force_original_aspect_ratio=increase,crop=512:512,format=rgba`,
         '-c:v', 'libwebp', '-loop', '0', '-q:v', String(qualidade), '-preset', 'default',
         '-f', 'webp', webpPath
       ]);
@@ -262,7 +262,7 @@ async function gerarCapaPadrao() {
 async function paraWebp512(buffer) {
   const sharp = (await import('sharp')).default;
   return sharp(buffer)
-    .resize(512, 512, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .resize(512, 512, { fit: 'cover', position: 'centre' })
     .webp({ quality: 90 })
     .toBuffer();
 }
