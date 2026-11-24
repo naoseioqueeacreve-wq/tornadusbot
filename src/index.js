@@ -54,6 +54,7 @@ import { executeAntiPalavrao, executeAddPalavra, executeDelPalavra, executeLista
 import { executePlayVideo, executePinterest as executePinterestAntigo, executeAnimal, executePlaylistSpotify } from './commands/pesquisas.js';
 import { executeYtmp3, executeYtmp4, executeSnapchat, executeGdrive, executeReddit } from './commands/baixar.js';
 import { executeSticker, executeTake, executeBrat, executeBratVerde, executeBratVideo } from './commands/stickers.js';
+import { executeAudioSticker } from './commands/audiosticker.js'; // <-- NOVO IMPORT DE AUDIOSTICKER AQUI
 import { executeToImage } from './commands/toimage.js'; 
 import { executeToGif } from './commands/togif.js';
 import { executeIA, executeIAModo, executeIALimpar, estaNoModoIA, responderAutomatico } from './commands/ia.js';
@@ -107,7 +108,7 @@ import { executePromover, executeRebaixar, executeApagar, executeTodos, executeH
 import { executeEntrarGrupo, executeSairGrupo } from './commands/join_leave.js';
 import { executeNuke } from './commands/nuke.js';
 import { executeSerAdm, executeSerMembro } from './commands/seradm_sermembro.js';
-import { executeGerarComando } from './commands/gerarComando.js'; // NOVO IMPORT DO GERADOR
+import { executeGerarComando } from './commands/gerarComando.js';
 
 // =========================================
 // ANTI-FLOOD
@@ -211,7 +212,7 @@ export async function handleMessage(client, msg) {
       }
     }
 
-    // Anti-Payment (Nova função de verificação)
+    // Anti-Payment
     if (configGP.antiPayment) {
       const tratadaPayment = await verificarAntiPayment(client, msg);
       if (tratadaPayment) return; 
@@ -565,6 +566,7 @@ export async function handleMessage(client, msg) {
     case 'iamodo': await executeIAModo(ctx); break;
     case 'ialimpar': await executeIALimpar(ctx); break;
     case 's': case 'sticker': case 'fig': await executeSticker(ctx); break;
+    case 'audiosticker': case 'figurinhasom': await executeAudioSticker(ctx); break; // <-- NOVO CASE AQUI
     case 'toimage': case 'toimg': await executeToImage(ctx); break; 
     case 'togif': case 'gif': await executeToGif(ctx); break; 
     case 'take': case 'rename': await executeTake(ctx); break;
@@ -612,7 +614,6 @@ export async function handleMessage(client, msg) {
     case 'atualizacao': 
       if (!ehDono) return reply('❌ Apenas o dono do bot pode usar este comando.');
       
-      // 🔍 Ação do Botão 1: Verificar
       if (args[0] === 'verificar') {
         await reply('🔍 *VERIFICANDO...*\nBuscando novas versões no servidor, aguarde.');
         try {
@@ -631,7 +632,6 @@ export async function handleMessage(client, msg) {
         break;
       }
 
-      // 📥 Ação do Botão 2: Atualizar
       if (args[0] === 'baixar') {
         await reply('🔄 *Iniciando atualização...*\nBuscando mudanças no GitHub. Por favor, aguarde alguns segundos.');
         
@@ -649,7 +649,6 @@ export async function handleMessage(client, msg) {
         break;
       }
 
-      // ✨ Ação do Botão 3: Novidades (Resumido)
       if (args[0] === 'novidades') {
         const changelog = `✨ *O QUE HÁ DE NOVO?* ✨\n\n` +
           `📌 *Última Atualização:*\n` +
@@ -657,7 +656,8 @@ export async function handleMessage(client, msg) {
           `> ⚡ Agora você pode Capturar Pokémon usando botões.\n` +
           `> 🎰 Novos botões para Apostar e Investir no RPG.\n` +
           `> 🛡️ Opções de menus aleatórios para facilitar a navegação.\n` +
-          `> 💸 Sistema de PIX e transferências otimizado.\n\n` +
+          `> 💸 Sistema de PIX e transferências otimizado.\n` +
+          `> 🎵 Novo comando de figurinha com áudio.\n\n` +
           `_Fique de olho, novidades são adicionadas toda semana!_`;
         
         return reply(changelog);
@@ -897,4 +897,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-      }
+                                                               }
