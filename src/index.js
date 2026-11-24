@@ -566,7 +566,7 @@ export async function handleMessage(client, msg) {
     case 'iamodo': await executeIAModo(ctx); break;
     case 'ialimpar': await executeIALimpar(ctx); break;
     case 's': case 'sticker': case 'fig': await executeSticker(ctx); break;
-    case 'audiosticker': case 'figurinhasom': await executeAudioSticker(ctx); break; // <-- AQUI ESTÁ O CASE
+    case 'audiosticker': case 'figurinhasom': await executeAudioSticker(ctx); break; 
     case 'toimage': case 'toimg': await executeToImage(ctx); break; 
     case 'togif': case 'gif': await executeToGif(ctx); break; 
     case 'take': case 'rename': await executeTake(ctx); break;
@@ -897,4 +897,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-        }
+    }
