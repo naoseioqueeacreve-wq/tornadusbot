@@ -18,6 +18,9 @@ import * as config from '../config.js';
 
 const MAX_SEGUNDOS_AUDIO = 60;
 const MAX_SEGUNDOS_VIDEO = 10;
+// Limites que o iPhone aceita (acima disso a figurinha não aparece no iOS)
+const MAX_BYTES_ANIMADA = 500 * 1024;
+const MAX_BYTES_ESTATICA = 100 * 1024;
 const CHAVE_PATCH = Symbol.for('yutabot.audioSticker.encoder');
 
 // ---- Dados que aparecem no nome da figurinha ----
@@ -133,7 +136,7 @@ async function recortarAudio(buffer, limite) {
 async function processarVideo(buffer, limite, extrairAudio = true) {
   return comTemporarios(buffer, ['webp', 'ogg'], async (entrada, [webpPath, oggPath]) => {
     let webp = null;
-    for (const [fps, qualidade] of [[15, 50], [12, 35], [10, 20]]) {
+    for (const [fps, qualidade] of [[15, 45], [12, 35], [10, 25], [8, 18], [8, 10]]) {
       await rodarFfmpeg([
         '-i', entrada, '-t', String(limite), '-an',
         '-vf', `fps=${fps},scale=512:512:force_original_aspect_ratio=increase,crop=512:512,format=rgba`,
@@ -141,7 +144,7 @@ async function processarVideo(buffer, limite, extrairAudio = true) {
         '-f', 'webp', webpPath
       ]);
       webp = await fs.readFile(webpPath);
-      if (webp.length <= 900 * 1024) break; // WhatsApp aceita figurinha animada até ~1MB
+      if (webp.length <= MAX_BYTES_ANIMADA - 1024) break; // iPhone só mostra animada até 500KB
     }
 
     let ogg = null;
@@ -253,7 +256,7 @@ async function gerarCapaPadrao() {
         <path d="M350 200q40 56 0 112" stroke="#fff" stroke-width="22" fill="none" stroke-linecap="round"/>
         <path d="M385 160q76 96 0 192" stroke="#fff" stroke-width="22" fill="none" stroke-linecap="round" opacity=".7"/>
       </svg>`;
-    return await sharp(Buffer.from(svg)).webp({ quality: 90 }).toBuffer();
+    return await webpLeve(sharp(Buffer.from(svg)));
   } catch {
     return null;
   }
@@ -261,10 +264,17 @@ async function gerarCapaPadrao() {
 
 async function paraWebp512(buffer) {
   const sharp = (await import('sharp')).default;
-  return sharp(buffer)
-    .resize(512, 512, { fit: 'cover', position: 'centre' })
-    .webp({ quality: 90 })
-    .toBuffer();
+  return webpLeve(sharp(buffer).resize(512, 512, { fit: 'cover', position: 'centre' }));
+}
+
+// Gera o WebP baixando a qualidade até ficar abaixo de 100KB (limite do iPhone)
+async function webpLeve(pipeline) {
+  let saida;
+  for (const q of [90, 75, 60, 45, 30, 20]) {
+    saida = await pipeline.clone().webp({ quality: q }).toBuffer();
+    if (saida.length <= MAX_BYTES_ESTATICA - 1024) break;
+  }
+  return saida;
 }
 
 async function obterCapa(msgAtual) {
@@ -290,7 +300,7 @@ async function montarFigurinha(client, webp, animada, exif) {
     { sticker: comNome },
     { upload: client.waUploadToServer }
   );
-  return {
+  const figurinha = {
     ...prep.stickerMessage,
     mimetype: 'image/webp',
     width: 512,
@@ -302,6 +312,9 @@ async function montarFigurinha(client, webp, animada, exif) {
     isAiSticker: false,
     isLottie: false
   };
+  // guarda o arquivo final (não vai dentro da mensagem) para a cópia do iPhone
+  Object.defineProperty(figurinha, '_webp', { value: comNome, enumerable: false });
+  return figurinha;
 }
 
 function gerarWaveform() {
@@ -368,7 +381,9 @@ export async function executeAudioSticker(ctx) {
     const audioMarcado = quoted.audioMessage || atual.audioMessage || null;
 
     // Escolha: 1 = áudio marcado | 2 = áudio do vídeo
-    const escolhaTxt = String(args[0] ?? '').trim();
+    const ehIos = a => /^(ios|iphone)$/i.test(String(a));
+    const enviarCopiaIos = args.some(ehIos);
+    const escolhaTxt = String(args.filter(a => !ehIos(a))[0] ?? '').trim();
     let escolha = escolhaTxt === '1' ? 1 : escolhaTxt === '2' ? 2 : 0;
 
     if (!video && !audioMarcado) {
@@ -378,7 +393,8 @@ export async function executeAudioSticker(ctx) {
         '• Responda a um *vídeo* (até 10s) com o comando\n' +
         '• Responda a um áudio e anexe um *vídeo* com:\n' +
         '   *1* → usa o áudio que você marcou\n' +
-        '   *2* → usa o áudio do vídeo'
+        '   *2* → usa o áudio do vídeo\n' +
+        '• Adicione *ios* (ex: /audiosticker 2 ios) para enviar também uma cópia comum que aparece no iPhone'
       );
     }
 
@@ -464,6 +480,13 @@ export async function executeAudioSticker(ctx) {
       },
       {}
     );
+
+    // Cópia comum (sem som) para quem usa iPhone: o formato com áudio só aparece no Android
+    if (enviarCopiaIos && figurinha._webp) {
+      await client.sendMessage(jid, { sticker: figurinha._webp }).catch(e =>
+        console.error('[audiosticker] cópia iPhone falhou:', e?.message || e)
+      );
+    }
 
     await client.sendMessage(jid, { react: { text: '✅', key: msg.key } }).catch(() => {});
   } catch (erro) {
