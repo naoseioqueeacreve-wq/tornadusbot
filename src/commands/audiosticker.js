@@ -449,13 +449,22 @@ export async function executeAudioSticker(ctx) {
       audioFinal = await subirAudio(client, oggDoVideo, segundosVideo);
     } else {
       const segundos = Number(audioMarcado.seconds) || 0;
-      if (segundos > MAX_SEGUNDOS_AUDIO) {
-        const recortado = await recortarAudio(await baixar(audioMarcado, 'audio'), MAX_SEGUNDOS_AUDIO);
-        audioFinal = await subirAudio(client, recortado, MAX_SEGUNDOS_AUDIO);
-      } else {
-        audioFinal = { ...audioMarcado, contextInfo: undefined, seconds: segundos || 1 };
-        if (!audioFinal.mimetype) audioFinal.mimetype = 'audio/ogg; codecs=opus';
+      const limite = segundos > 0 ? Math.min(segundos, MAX_SEGUNDOS_AUDIO) : MAX_SEGUNDOS_AUDIO;
+
+      // Sempre baixa o áudio marcado e sobe de novo (as mensagens "respondidas" costumam
+      // vir sem os dados de mídia completos, então usar o áudio original direto falha).
+      let bufferAudio;
+      try {
+        bufferAudio = await baixar(audioMarcado, 'audio');
+      } catch (e) {
+        throw new Error('não consegui baixar o áudio marcado. Envie o áudio de novo e tente outra vez.');
       }
+      if (!bufferAudio?.length) {
+        throw new Error('o áudio marcado veio vazio. Envie o áudio de novo e tente outra vez.');
+      }
+
+      const convertido = await recortarAudio(bufferAudio, limite);
+      audioFinal = await subirAudio(client, convertido, limite);
     }
 
     // Figurinha com som toca como nota de voz (ptt)
