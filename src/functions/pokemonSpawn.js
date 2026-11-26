@@ -3,7 +3,7 @@ import { sortearPokemon, RARIDADES, IMAGENS, getGeracaoAtual } from './pokemon.j
 import { lerDB, salvarDB, getGruposSpawn } from './pokemonDB.js';
 import { iniciarRaids } from './pokemonRaid.js';
 import { PREFIX } from '../config.js';
-import { enviarBotoes, botaoResposta } from './botoes.js';
+import { enviarBotoes, botaoLista, botaoResposta } from './botoes.js';
 
 export const gruposAtivos = new Set();
 export function registrarGrupo(jid) {}
@@ -11,6 +11,7 @@ export function registrarGrupo(jid) {}
 let currentClient = null;
 let cronIniciado = false;
 
+// Função para baixar a imagem contornando o bloqueio HTTP 429
 async function baixarImagem(url) {
   try {
     const response = await fetch(url, {
@@ -29,6 +30,23 @@ async function baixarImagem(url) {
     console.error('[POKEMON] Erro ao baixar imagem:', error.message);
     return null;
   }
+}
+
+// Função auxiliar para criar o botão de lista de pokébolas
+function gerarBotaoCaptura(nomePokemon) {
+  const secoes = [
+    {
+      titulo: "🎒 𝙀𝙎𝘾𝙊𝙇𝙃𝘼 𝘼 𝙋𝙊𝙆𝙀́𝘽𝙊𝙇𝘼 ↴",
+      linhas: [
+        { titulo: "🔴 Pokébola Normal", descricao: "Tentar capturar com Pokébola", id: `${PREFIX}capturar ${nomePokemon} normal` },
+        { titulo: "🔵 Great Ball", descricao: "Tentar capturar com Great Ball", id: `${PREFIX}capturar ${nomePokemon} great` },
+        { titulo: "🟡 Ultra Ball", descricao: "Tentar capturar com Ultra Ball", id: `${PREFIX}capturar ${nomePokemon} ultra` },
+        { titulo: "🟣 Master Ball", descricao: "Tentar capturar com Master Ball", id: `${PREFIX}capturar ${nomePokemon} master` }
+      ]
+    }
+  ];
+
+  return [ botaoLista('『 𝑪𝑨𝑷𝑻𝑼𝑹𝑨𝑹 』', secoes) ];
 }
 
 export function iniciarSpawn(client) {
@@ -77,8 +95,7 @@ export function iniciarSpawn(client) {
         `   ${r.emoji} Raridade: *${r.nome}* ${r.estrelas}\n` +
         `   ❤️ HP: ${pokemon.hp} | ⚔️ ATK: ${pokemon.atk}\n\n` +
         `⏰ Você tem *3 minutos* para capturar!\n` +
-        `💡 Use: \`!capturar ${pokemon.nome}\`\n` +
-        `_(Você pode escolher a bola: !capturar ${pokemon.nome} great)_`;
+        `👇 Selecione a Pokébola no botão abaixo:`;
 
       const urlImagem = pokemon.img || pokemon.imagem || pokemon.gif || pokemon.url || (IMAGENS ? IMAGENS.spawn : null);
       let bufferImagem = null;
@@ -87,11 +104,9 @@ export function iniciarSpawn(client) {
         bufferImagem = await baixarImagem(urlImagem);
       }
 
-      const botoes = [
-        botaoResposta('🎯 Capturar Pokémon', `${PREFIX}capturar ${pokemon.nome.toLowerCase()}`)
-      ];
+      const botoes = gerarBotaoCaptura(pokemon.nome.toLowerCase());
 
-      // Envia Imagem + Texto + Botão na mesma mensagem
+      // Envia tudo junto (Imagem + Texto + Botão de Lista)
       await enviarBotoes(currentClient, jid, {
         titulo: '⚡ Pokémon Selvagem',
         corpo: texto,
@@ -122,7 +137,7 @@ export async function forcarSpawn(client, jid) {
     `   ${pokemon.emoji} *${pokemon.nome}*\n` +
     `   ${r.emoji} Raridade: *${r.nome}* ${r.estrelas}\n` +
     `   ❤️ HP: ${pokemon.hp} | ⚔️ ATK: ${pokemon.atk}\n\n` +
-    `💡 Use: \`!capturar ${pokemon.nome}\``;
+    `👇 Selecione a Pokébola no botão abaixo:`;
 
   const urlImagem = pokemon.img || pokemon.imagem || pokemon.gif || pokemon.url || (IMAGENS ? IMAGENS.spawn : null);
   let bufferImagem = null;
@@ -131,9 +146,7 @@ export async function forcarSpawn(client, jid) {
     bufferImagem = await baixarImagem(urlImagem);
   }
 
-  const botoes = [
-    botaoResposta('🎯 Capturar Pokémon', `${PREFIX}capturar ${pokemon.nome.toLowerCase()}`)
-  ];
+  const botoes = gerarBotaoCaptura(pokemon.nome.toLowerCase());
 
   await enviarBotoes(client, jid, {
     titulo: '⚡ Spawn Forçado',
@@ -144,4 +157,4 @@ export async function forcarSpawn(client, jid) {
   });
 
   return true;
-}
+                    }
