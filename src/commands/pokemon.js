@@ -7,13 +7,8 @@ import {
   lerDB, salvarDB, getUsuario, salvarUsuario, setSpawnGrupo
 } from '../functions/pokemonDB.js';
 import { delay } from '@whiskeysockets/baileys';
+import { isAdmin, isOwner } from '../functions/permissions.js';
 
-// 🕹️ IMPORTAÇÃO DO SISTEMA DE BOTÕES
-import { enviarBotoes, botaoLista, botaoResposta } from '../functions/botoes.js';
-
-// =========================================
-// FUNÇÃO AUXILIAR: INVENTÁRIO DE BOLAS
-// =========================================
 function textoInventario(user) {
   return `🎒 *Suas Pokébolas:*\n` +
     `🔴 Normal: ${user.pokebolas.normal || 0} | ` +
@@ -22,9 +17,6 @@ function textoInventario(user) {
     `🟣 Master: ${user.pokebolas.master || 0}`;
 }
 
-// =========================================
-// COMANDO: !pokemon (menu principal)
-// =========================================
 export async function executePokemon(ctx) {
   const { client, msg, sender, pushName } = ctx;
   const user = getUsuario(sender);
@@ -66,9 +58,6 @@ export async function executePokemon(ctx) {
   }
 }
 
-// =========================================
-// COMANDO: !meuspokemons
-// =========================================
 export async function executeMeusPokemons(ctx) {
   const { reply, sender } = ctx;
   const user = getUsuario(sender);
@@ -91,9 +80,6 @@ export async function executeMeusPokemons(ctx) {
   return reply(texto);
 }
 
-// =========================================
-// COMANDO: !trocar <número>
-// =========================================
 export async function executeTrocar(ctx) {
   const { reply, sender, q } = ctx;
   const user = getUsuario(sender);
@@ -110,9 +96,6 @@ export async function executeTrocar(ctx) {
   return reply(`✅ Pokémon ativo: ${p.emoji} *${p.nome}*`);
 }
 
-// =========================================
-// COMANDO: !alimentar <item> (DÁ XP)
-// =========================================
 export async function executeAlimentar(ctx) {
   const { reply, sender, q } = ctx;
   const user = getUsuario(sender);
@@ -146,11 +129,8 @@ export async function executeAlimentar(ctx) {
   return reply(texto);
 }
 
-// =========================================
-// COMANDO: !lojapokemon (COM BOTÕES)
-// =========================================
 export async function executeLojaPokemon(ctx) {
-  const { client, msg, sender, jid } = ctx;
+  const { client, msg, sender } = ctx;
   const user = getUsuario(sender);
 
   let texto = `🏪 *LOJA POKÉMON*\n` +
@@ -161,40 +141,17 @@ export async function executeLojaPokemon(ctx) {
     texto += `   ❤️ +${v.felicidade} | 🍖 +${v.fome} | ⭐ +${v.xp} XP\n\n`;
   });
 
-  texto += `💡 Selecione um item no botão abaixo para comprar:`;
-
-  const secoes = [
-    {
-      titulo: "🍖 𝙄𝙏𝙀𝙉𝙎 ↴",
-      linhas: Object.entries(ITENS).map(([k, v]) => ({
-        titulo: `${v.emoji} ${v.nome}`,
-        descricao: `Preço: ${v.preco} PokéCoins`,
-        tag: "Comprar",
-        id: `${PREFIX}comprar ${k}`
-      }))
-    }
-  ];
-
-  const botoes = [ botaoLista('『 𝑨𝑩𝑹𝑰𝑹 𝑳𝑶𝑱𝑨 』', secoes) ];
+  texto += `💡 Compre com: ${PREFIX}comprar <item>`;
 
   try {
-    await enviarBotoes(client, jid, {
-      titulo: '🏪 Loja Pokémon',
-      corpo: texto,
-      rodape: '© Pikachu Bot',
-      imagem: { url: IMAGENS.loja },
-      botoes
-    }, msg);
+    return await client.sendMessage(msg.key.remoteJid, { image: { url: IMAGENS.loja }, caption: texto }, { quoted: msg });
   } catch {
-    return client.sendMessage(jid, { image: { url: IMAGENS.loja }, caption: texto }, { quoted: msg });
+    return client.sendMessage(msg.key.remoteJid, { text: texto }, { quoted: msg });
   }
 }
 
-// =========================================
-// COMANDO: !lojapokebola (COM BOTÕES)
-// =========================================
 export async function executeLojaPokebola(ctx) {
-  const { client, msg, sender, jid } = ctx;
+  const { client, msg, sender } = ctx;
   const user = getUsuario(sender);
 
   let texto = `🔴 *LOJA DE POKÉBOLAS*\n` +
@@ -205,112 +162,46 @@ export async function executeLojaPokebola(ctx) {
     texto += `   🎯 Multiplicador: x${v.multiplicador}\n\n`;
   });
 
-  texto += `💡 Selecione uma Pokébola no botão abaixo para comprar:`;
-
-  const secoes = [
-    {
-      titulo: "🔴 𝙋𝙊𝙆𝙀́𝘽𝙊𝙇𝘼𝙎 ↴",
-      linhas: Object.entries(POKEBOLAS).map(([k, v]) => ({
-        titulo: `${v.emoji} ${v.nome}`,
-        descricao: `Preço: ${v.preco.toLocaleString('pt-BR')} | Multiplicador: x${v.multiplicador}`,
-        tag: "Comprar",
-        id: `${PREFIX}comprar ${k}`
-      }))
-    }
-  ];
-
-  const botoes = [ botaoLista('『 𝑨𝑩𝑹𝑰𝑹 𝑳𝑶𝑱𝑨 』', secoes) ];
+  texto += `💡 Compre com: ${PREFIX}comprar <bola>`;
 
   try {
-    await enviarBotoes(client, jid, {
-      titulo: '⚡ Loja de Pokébolas',
-      corpo: texto,
-      rodape: '© Pikachu Bot',
-      imagem: { url: IMAGENS.pokebola },
-      botoes
-    }, msg);
+    return await client.sendMessage(msg.key.remoteJid, { image: { url: IMAGENS.pokebola }, caption: texto }, { quoted: msg });
   } catch {
-    return client.sendMessage(jid, { image: { url: IMAGENS.pokebola }, caption: texto }, { quoted: msg });
+    return client.sendMessage(msg.key.remoteJid, { text: texto }, { quoted: msg });
   }
 }
 
-// =========================================
-// COMANDO: !comprar <item> [qtd] (COM LISTA DE QUANTIDADE)
-// =========================================
 export async function executeComprar(ctx) {
-  const { reply, sender, q, client, jid, msg } = ctx;
+  const { reply, sender, q } = ctx;
   const user = getUsuario(sender);
-  
-  const partes = q.trim().toLowerCase().split(/\s+/);
-  const nome = partes[0];
-  const qtd = parseInt(partes[1]) || 0;
+  const nome = q.trim().toLowerCase();
 
-  const itemBola = Object.entries(POKEBOLAS).find(([k, v]) => k === nome || v.nome.toLowerCase() === nome);
-  const itemComida = Object.entries(ITENS).find(([k, v]) => k === nome || v.nome.toLowerCase() === nome);
+  const item = Object.entries(ITENS).find(([k, v]) => k === nome || v.nome.toLowerCase() === nome)
+    || Object.entries(POKEBOLAS).find(([k, v]) => k === nome || v.nome.toLowerCase() === nome);
 
-  const item = itemBola || itemComida;
   if (!item) return reply('❌ Item inválido. Veja com `!lojapokemon` ou `!lojapokebola`.');
 
   const [chave, dados] = item;
 
-  // Se a pessoa ainda NÃO escolheu a quantidade, mostra a lista de quantidades
-  if (qtd === 0) {
-    const secoesQtd = [
-      {
-        titulo: "🛒 𝙌𝙐𝘼𝙉𝙏𝙄𝘿𝘼𝘿𝙀 ↴",
-        linhas: [1, 2, 3, 4, 5].map(n => {
-          const total = dados.preco * n;
-          return {
-            titulo: `🛒 Comprar ${n}x`,
-            descricao: `Total: ${total.toLocaleString('pt-BR')} PokéCoins`,
-            id: `${PREFIX}comprar ${chave} ${n}`
-          };
-        })
-      }
-    ];
-
-    const botoesQtd = [ botaoLista('『 𝑬𝑺𝑪𝑶𝑳𝑯𝑬𝑹 𝑸𝑼𝑨𝑵𝑻𝑰𝑫𝑨𝑫𝑬 』', secoesQtd) ];
-    
-    const texto = `🛒 *QUANTIDADE*\n\nQuantas *${dados.emoji} ${dados.nome}* você deseja comprar?\n💰 Preço unitário: ${dados.preco.toLocaleString('pt-BR')} PokéCoins`;
-    
-    try {
-      return await enviarBotoes(client, jid, {
-        corpo: texto,
-        rodape: '© Pikachu Bot',
-        botoes: botoesQtd
-      }, msg);
-    } catch {
-      return reply(texto + `\n\nUse: ${PREFIX}comprar ${chave} <qtd>`);
-    }
+  if (user.pokecoins < dados.preco) {
+    return reply(`❌ Você precisa de ${dados.preco} PokéCoins. Saldo: ${user.pokecoins}.`);
   }
 
-  // Se a quantidade já foi escolhida, processa a compra
-  const quantidadeFinal = qtd;
-  const precoTotal = dados.preco * quantidadeFinal;
-
-  if (user.pokecoins < precoTotal) {
-    return reply(`❌ Você precisa de ${precoTotal.toLocaleString('pt-BR')} PokéCoins. Saldo: ${user.pokecoins}.`);
-  }
-
-  user.pokecoins -= precoTotal;
+  user.pokecoins -= dados.preco;
 
   if (chave in POKEBOLAS) {
-    user.pokebolas[chave] = (user.pokebolas[chave] || 0) + quantidadeFinal;
+    user.pokebolas[chave] = (user.pokebolas[chave] || 0) + 1;
   } else {
-    user.itens[chave] = (user.itens[chave] || 0) + quantidadeFinal;
+    user.itens[chave] = (user.itens[chave] || 0) + 1;
   }
 
   salvarUsuario(sender, user);
 
-  return reply(
-    `✅ Comprou *${quantidadeFinal}x ${dados.emoji} ${dados.nome}*!\n` +
-    `💰 Gasto: ${precoTotal.toLocaleString('pt-BR')} PokéCoins\n` +
-    `💰 Saldo restante: ${user.pokecoins} PokéCoins\n\n${textoInventario(user)}`
-  );
+  return reply(`✅ Comprou *${dados.emoji} ${dados.nome}*!\n💰 Saldo: ${user.pokecoins} PokéCoins\n\n${textoInventario(user)}`);
 }
 
 // =========================================
-// COMANDO: !capturar <nome> [bola]
+// CAPTURA (Atualizado para múltiplos spawns por grupo)
 // =========================================
 export async function executeCapturar(ctx) {
   const { client, msg, sender, q } = ctx;
@@ -318,12 +209,13 @@ export async function executeCapturar(ctx) {
   const user = getUsuario(sender);
   const jid = msg.key.remoteJid;
 
-  if (!db.spawnAtual) return client.sendMessage(jid, { text: '❌ Nenhum Pokémon apareceu ainda. Aguarde!' });
+  // Verifica se tem spawn NESTE grupo específico
+  const spawn = db.spawnsAtivos && db.spawnsAtivos[jid];
 
-  const spawn = db.spawnAtual;
+  if (!spawn) return client.sendMessage(jid, { text: '❌ Nenhum Pokémon apareceu neste grupo ainda. Aguarde!' });
 
   if (Date.now() > spawn.expiraEm) {
-    db.spawnAtual = null;
+    delete db.spawnsAtivos[jid];
     salvarDB(db);
     return client.sendMessage(jid, { text: '💨 O Pokémon fugiu! Ele ficou muito tempo sem ser capturado.' });
   }
@@ -356,7 +248,7 @@ export async function executeCapturar(ctx) {
   if (sucesso) {
     const pokemon = { ...spawn.pokemon, level: 1, felicidade: 50, fome: 50 };
     user.pokemons.push(pokemon);
-    db.spawnAtual = null;
+    delete db.spawnsAtivos[jid];
     
     const resultadoXp = adicionarXpTreinador(user, 100);
     db.usuarios[sender] = resultadoXp.user; 
@@ -368,7 +260,7 @@ export async function executeCapturar(ctx) {
     
   } else {
     if (Math.random() < 0.3) {
-      db.spawnAtual = null;
+      delete db.spawnsAtivos[jid];
       textoFinal = `💨 *${spawn.pokemon.emoji} ${spawn.pokemon.nome}* fugiu! Ele quebrou a bola e correu.\n\n${textoInventario(user)}`;
     } else {
       textoFinal = `😢 *${spawn.pokemon.emoji} ${spawn.pokemon.nome}* escapou da Pokébola!\n\n${textoInventario(user)}`;
@@ -403,9 +295,6 @@ export async function executeCapturar(ctx) {
   }
 }
 
-// =========================================
-// COMANDO: !batalhapokemon @user (DÁ XP)
-// =========================================
 export async function executeBatalhaPokemon(ctx) {
   const { reply, sender, msg, pushName } = ctx;
   const user = getUsuario(sender);
@@ -457,9 +346,6 @@ export async function executeBatalhaPokemon(ctx) {
   return reply(texto);
 }
 
-// =========================================
-// COMANDO: !ataque1 / !ataque2 / !ataque3
-// =========================================
 export async function executeAtaque(ctx, numero) {
   const { reply, sender } = ctx;
   const user = getUsuario(sender);
@@ -485,13 +371,19 @@ export async function executeAtaque(ctx, numero) {
 }
 
 // =========================================
-// COMANDO: !ativarspawn (POR GRUPO)
+// ATIVAR SPAWN (AGORA ADMINS PODEM USAR)
 // =========================================
 export async function executeAtivarSpawn(ctx) {
-  const { reply, sender, msg, isGroup } = ctx;
-  const { isOwner } = await import('../functions/permissions.js');
-  if (!isOwner(sender)) return reply('❌ Apenas o dono do bot pode usar este comando.');
+  const { reply, sender, msg, isGroup, groupMetadata, client } = ctx;
+  
   if (!isGroup) return reply('❌ Use este comando dentro do grupo onde você quer ativar o spawn.');
+
+  // Pega os metadados atualizados para ter certeza que a pessoa é admin
+  const meta = groupMetadata || await client.groupMetadata(msg.key.remoteJid).catch(() => null);
+  
+  if (!isOwner(sender) && !isAdmin(sender, meta)) {
+    return reply('❌ Apenas administradores do grupo (ou o dono do bot) podem ativar o spawn.');
+  }
 
   if (!setSpawnGrupo(msg.key.remoteJid, true)) {
     return reply('⚠️ O spawn já está ativado *neste grupo*.');
@@ -500,16 +392,21 @@ export async function executeAtivarSpawn(ctx) {
 }
 
 // =========================================
-// COMANDO: !desativarspawn (POR GRUPO)
+// DESATIVAR SPAWN (AGORA ADMINS PODEM USAR)
 // =========================================
 export async function executeDesativarSpawn(ctx) {
-  const { reply, sender, msg, isGroup } = ctx;
-  const { isOwner } = await import('../functions/permissions.js');
-  if (!isOwner(sender)) return reply('❌ Apenas o dono do bot pode usar este comando.');
+  const { reply, sender, msg, isGroup, groupMetadata, client } = ctx;
+  
   if (!isGroup) return reply('❌ Use este comando dentro do grupo onde você quer desativar o spawn.');
+
+  const meta = groupMetadata || await client.groupMetadata(msg.key.remoteJid).catch(() => null);
+
+  if (!isOwner(sender) && !isAdmin(sender, meta)) {
+    return reply('❌ Apenas administradores do grupo (ou o dono do bot) podem desativar o spawn.');
+  }
 
   if (!setSpawnGrupo(msg.key.remoteJid, false)) {
     return reply('⚠️ O spawn já está desativado *neste grupo*.');
   }
   return reply('🔕 *SPAWN DESATIVADO NESTE GRUPO!*\n\nOs Pokémons não vão mais aparecer aqui.');
-      }
+  }
