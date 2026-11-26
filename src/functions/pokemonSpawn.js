@@ -3,7 +3,7 @@ import { sortearPokemon, RARIDADES, IMAGENS, getGeracaoAtual } from './pokemon.j
 import { lerDB, salvarDB, getGruposSpawn } from './pokemonDB.js';
 import { iniciarRaids } from './pokemonRaid.js';
 import { PREFIX } from '../config.js';
-import { enviarBotoes, botaoLista, botaoResposta } from './botoes.js';
+import { enviarBotoes, botaoLista } from './botoes.js';
 
 export const gruposAtivos = new Set();
 export function registrarGrupo(jid) {}
@@ -11,7 +11,6 @@ export function registrarGrupo(jid) {}
 let currentClient = null;
 let cronIniciado = false;
 
-// Função para baixar a imagem contornando o bloqueio HTTP 429
 async function baixarImagem(url) {
   try {
     const response = await fetch(url, {
@@ -23,7 +22,6 @@ async function baixarImagem(url) {
     });
     
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
     const arrayBuffer = await response.arrayBuffer();
     return Buffer.from(arrayBuffer);
   } catch (error) {
@@ -32,7 +30,6 @@ async function baixarImagem(url) {
   }
 }
 
-// Função auxiliar para criar o botão de lista de pokébolas
 function gerarBotaoCaptura(nomePokemon) {
   const secoes = [
     {
@@ -45,7 +42,6 @@ function gerarBotaoCaptura(nomePokemon) {
       ]
     }
   ];
-
   return [ botaoLista('『 𝑪𝑨𝑷𝑻𝑼𝑹𝑨𝑹 』', secoes) ];
 }
 
@@ -60,62 +56,81 @@ export function iniciarSpawn(client) {
 
   cron.schedule('*/5 * * * *', async () => {
     try {
-      if (getGruposSpawn().length === 0) return;
+      const gruposAtivos = getGruposSpawn();
+      if (gruposAtivos.length === 0) return;
 
       let db = lerDB();
-      const agora = Date.now();
+      
+      // Cria a estrutura de múltiplos spawns se não existir
+      if (!db.spawnsAtivos) db.spawnsAtivos = {};
 
+      // Compatibilidade com versão antiga (apenas um spawn)
       if (db.spawnAtual) {
-        if (agora > db.spawnAtual.expiraEm) {
-          const velho = db.spawnAtual.pokemon;
-          const jidAntigo = db.spawnAtual.jid;
-          db.spawnAtual = null;
-          salvarDB(db);
-          try {
-            await currentClient.sendMessage(jidAntigo, { text: `💨 *${velho.emoji} ${velho.nome}* fugiu! Ninguém capturou a tempo.` });
-          } catch (e) {}
-          db = lerDB();
-        } else {
-          return;
+        db.spawnsAtivos[db.spawnAtual.jid] = db.spawnAtual;
+        delete db.spawnAtual;
+      }
+
+      const agora = Date.now();
+      let salvou = false;
+
+      // Vai passar por TODOS os grupos que ativaram o spawn
+      for (const jid of gruposAtivos) {
+        const spawnAtual = db.spawnsAtivos[jid];
+
+        // Se já tem um Pokémon ativo no grupo
+        if (spawnAtual) {
+          if (agora > spawnAtual.expiraEm) {
+            // Expirou, avisa que fugiu e apaga
+            const velho = spawnAtual.pokemon;
+            delete db.spawnsAtivos[jid];
+            salvou = true;
+            try {
+              await currentClient.sendMessage(jid, { text: `💨 *${velho.emoji} ${velho.nome}* fugiu! Ninguém capturou a tempo.` });
+            } catch (e) {}
+          } else {
+            // Ainda está ativo, não faz nada neste grupo
+            continue;
+          }
+        }
+
+        // Cria um novo Pokémon para este grupo
+        const pokemon = sortearPokemon();
+        const r = RARIDADES[pokemon.raridade];
+        db.spawnsAtivos[jid] = { pokemon, expiraEm: Date.now() + 3 * 60 * 1000 };
+        salvou = true;
+
+        const texto = `⚡ *UM POKÉMON SELVAGEM APARECEU!* ⚡\n\n` +
+          `📅 Geração de Hoje: *${getGeracaoAtual()}*\n\n` +
+          `   ${pokemon.emoji} *${pokemon.nome}*\n` +
+          `   ${r.emoji} Raridade: *${r.nome}* ${r.estrelas}\n` +
+          `   ❤️ HP: ${pokemon.hp} | ⚔️ ATK: ${pokemon.atk}\n\n` +
+          `⏰ Você tem *3 minutos* para capturar!\n` +
+          `👇 Selecione a Pokébola no botão abaixo:`;
+
+        const urlImagem = pokemon.img || pokemon.imagem || pokemon.gif || pokemon.url || (IMAGENS ? IMAGENS.spawn : null);
+        let bufferImagem = null;
+
+        if (urlImagem && typeof urlImagem === 'string' && urlImagem.startsWith('http')) {
+          bufferImagem = await baixarImagem(urlImagem);
+        }
+
+        const botoes = gerarBotaoCaptura(pokemon.nome.toLowerCase());
+
+        try {
+          await enviarBotoes(currentClient, jid, {
+            titulo: '⚡ Pokémon Selvagem',
+            corpo: texto,
+            rodape: '© Pikachu Bot',
+            imagem: bufferImagem,
+            botoes
+          });
+          console.log(`[POKEMON] ✅ Spawn enviado em ${jid}: ${pokemon.nome}`);
+        } catch (err) {
+          console.error(`[POKEMON] Erro ao enviar em ${jid}:`, err.message);
         }
       }
 
-      const grupos = getGruposSpawn();
-      if (grupos.length === 0) return;
-      const jid = grupos[Math.floor(Math.random() * grupos.length)];
-      const pokemon = sortearPokemon();
-      const r = RARIDADES[pokemon.raridade];
-
-      db.spawnAtual = { jid, pokemon, expiraEm: Date.now() + 3 * 60 * 1000 };
-      salvarDB(db);
-
-      const texto = `⚡ *UM POKÉMON SELVAGEM APARECEU!* ⚡\n\n` +
-        `📅 Geração de Hoje: *${getGeracaoAtual()}*\n\n` +
-        `   ${pokemon.emoji} *${pokemon.nome}*\n` +
-        `   ${r.emoji} Raridade: *${r.nome}* ${r.estrelas}\n` +
-        `   ❤️ HP: ${pokemon.hp} | ⚔️ ATK: ${pokemon.atk}\n\n` +
-        `⏰ Você tem *3 minutos* para capturar!\n` +
-        `👇 Selecione a Pokébola no botão abaixo:`;
-
-      const urlImagem = pokemon.img || pokemon.imagem || pokemon.gif || pokemon.url || (IMAGENS ? IMAGENS.spawn : null);
-      let bufferImagem = null;
-
-      if (urlImagem && typeof urlImagem === 'string' && urlImagem.startsWith('http')) {
-        bufferImagem = await baixarImagem(urlImagem);
-      }
-
-      const botoes = gerarBotaoCaptura(pokemon.nome.toLowerCase());
-
-      // Envia tudo junto (Imagem + Texto + Botão de Lista)
-      await enviarBotoes(currentClient, jid, {
-        titulo: '⚡ Pokémon Selvagem',
-        corpo: texto,
-        rodape: '© Pikachu Bot',
-        imagem: bufferImagem,
-        botoes
-      });
-
-      console.log(`[POKEMON] ✅ Spawn automático enviado em ${jid}: ${pokemon.nome}`);
+      if (salvou) salvarDB(db);
 
     } catch (error) {
       console.error('[POKEMON] ❌ Erro no loop do spawn:', error.message);
@@ -125,11 +140,13 @@ export function iniciarSpawn(client) {
 
 export async function forcarSpawn(client, jid) {
   const db = lerDB();
-  if (db.spawnAtual && Date.now() < db.spawnAtual.expiraEm) return false;
+  if (!db.spawnsAtivos) db.spawnsAtivos = {};
+
+  if (db.spawnsAtivos[jid] && Date.now() < db.spawnsAtivos[jid].expiraEm) return false;
 
   const pokemon = sortearPokemon();
   const r = RARIDADES[pokemon.raridade];
-  db.spawnAtual = { jid, pokemon, expiraEm: Date.now() + 3 * 60 * 1000 };
+  db.spawnsAtivos[jid] = { pokemon, expiraEm: Date.now() + 3 * 60 * 1000 };
   salvarDB(db);
 
   const texto = `⚡ *SPAWN FORÇADO (TESTE)* ⚡\n\n` +
@@ -157,4 +174,4 @@ export async function forcarSpawn(client, jid) {
   });
 
   return true;
-                    }
+          }
