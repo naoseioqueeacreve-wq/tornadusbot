@@ -8,8 +8,6 @@ import {
 } from '../functions/pokemonDB.js';
 import { delay } from '@whiskeysockets/baileys';
 import { isAdmin, isOwner } from '../functions/permissions.js';
-
-// 🕹️ IMPORTAÇÃO DO SISTEMA DE BOTÕES
 import { enviarBotoes, botaoLista, botaoResposta } from '../functions/botoes.js';
 
 // =========================================
@@ -24,10 +22,21 @@ function textoInventario(user) {
 }
 
 // =========================================
+// FUNÇÃO AUXILIAR: REAGIR À MENSAGEM
+// =========================================
+async function reagir(client, msg, emoji) {
+  try {
+    await client.sendMessage(msg.key.remoteJid, { react: { text: emoji, key: msg.key } });
+  } catch (e) {}
+}
+
+// =========================================
 // COMANDO: !pokemon (menu principal)
 // =========================================
 export async function executePokemon(ctx) {
   const { client, msg, sender, pushName } = ctx;
+  await reagir(client, msg, '⚡');
+  
   const user = getUsuario(sender);
   const ativo = user.pokemonAtivo !== null ? user.pokemons[user.pokemonAtivo] : null;
   
@@ -71,7 +80,8 @@ export async function executePokemon(ctx) {
 // COMANDO: !meuspokemons
 // =========================================
 export async function executeMeusPokemons(ctx) {
-  const { reply, sender } = ctx;
+  const { client, msg, reply, sender } = ctx;
+  await reagir(client, msg, '🎒');
   const user = getUsuario(sender);
 
   if (user.pokemons.length === 0) {
@@ -96,11 +106,12 @@ export async function executeMeusPokemons(ctx) {
 // COMANDO: !trocar <número>
 // =========================================
 export async function executeTrocar(ctx) {
-  const { reply, sender, q } = ctx;
+  const { client, msg, reply, sender, q } = ctx;
   const user = getUsuario(sender);
 
   const num = parseInt(q.trim());
   if (!num || num < 1 || num > user.pokemons.length) {
+    await reagir(client, msg, '❌');
     return reply(`❌ Use: !trocar <número>\nVeja sua lista com !meuspokemons`);
   }
 
@@ -108,6 +119,7 @@ export async function executeTrocar(ctx) {
   salvarUsuario(sender, user);
 
   const p = user.pokemons[num - 1];
+  await reagir(client, msg, '🔄');
   return reply(`✅ Pokémon ativo: ${p.emoji} *${p.nome}*`);
 }
 
@@ -115,17 +127,24 @@ export async function executeTrocar(ctx) {
 // COMANDO: !alimentar <item> (DÁ XP)
 // =========================================
 export async function executeAlimentar(ctx) {
-  const { reply, sender, q } = ctx;
+  const { client, msg, reply, sender, q } = ctx;
   const user = getUsuario(sender);
 
-  if (user.pokemonAtivo === null) return reply('❌ Você não tem um Pokémon ativo. Use `!trocar <número>`.');
+  if (user.pokemonAtivo === null) {
+    await reagir(client, msg, '❌');
+    return reply('❌ Você não tem um Pokémon ativo. Use `!trocar <número>`.');
+  }
 
   const itemNome = q.trim().toLowerCase();
   const item = Object.entries(ITENS).find(([k, v]) => k === itemNome || v.nome.toLowerCase() === itemNome);
-  if (!item) return reply('❌ Item inválido. Veja com `!lojapokemon`.');
+  if (!item) {
+    await reagir(client, msg, '❌');
+    return reply('❌ Item inválido. Veja com `!lojapokemon`.');
+  }
 
   const [chave, dados] = item;
   if (!user.itens[chave] || user.itens[chave] <= 0) {
+    await reagir(client, msg, '❌');
     return reply(`❌ Você não tem *${dados.nome}*. Compre com \`!comprar ${chave}\`.`);
   }
 
@@ -136,6 +155,8 @@ export async function executeAlimentar(ctx) {
 
   const resultadoXp = adicionarXpTreinador(user, dados.xp);
   salvarUsuario(sender, resultadoXp.user);
+
+  await reagir(client, msg, '🍖');
 
   let texto = `🍽️ *${p.emoji} ${p.nome}* comeu *${dados.emoji} ${dados.nome}*!\n\n` +
     `❤️ Felicidade: ${p.felicidade}/100\n` +
@@ -148,10 +169,11 @@ export async function executeAlimentar(ctx) {
 }
 
 // =========================================
-// COMANDO: !lojapokemon (COM BOTÕES DE LISTA)
+// COMANDO: !lojapokemon
 // =========================================
 export async function executeLojaPokemon(ctx) {
   const { client, msg, sender, jid } = ctx;
+  await reagir(client, msg, '🏪');
   const user = getUsuario(sender);
 
   let texto = `🏪 *LOJA POKÉMON*\n` +
@@ -164,7 +186,6 @@ export async function executeLojaPokemon(ctx) {
 
   texto += `💡 Selecione um item no botão abaixo para comprar:`;
 
-  // Criando a Lista de Itens
   const secoes = [
     {
       titulo: "🍖 𝙄𝙏𝙀𝙉𝙎 ↴",
@@ -193,10 +214,11 @@ export async function executeLojaPokemon(ctx) {
 }
 
 // =========================================
-// COMANDO: !lojapokebola (COM BOTÕES DE LISTA)
+// COMANDO: !lojapokebola
 // =========================================
 export async function executeLojaPokebola(ctx) {
   const { client, msg, sender, jid } = ctx;
+  await reagir(client, msg, '🔴');
   const user = getUsuario(sender);
 
   let texto = `🔴 *LOJA DE POKÉBOLAS*\n` +
@@ -209,7 +231,6 @@ export async function executeLojaPokebola(ctx) {
 
   texto += `💡 Selecione uma Pokébola no botão abaixo para comprar:`;
 
-  // Criando a Lista de Pokébolas
   const secoes = [
     {
       titulo: "🔴 𝙋𝙊𝙆𝙀́𝘽𝙊𝙇𝘼𝙎 ↴",
@@ -238,7 +259,7 @@ export async function executeLojaPokebola(ctx) {
 }
 
 // =========================================
-// COMANDO: !comprar <item> [qtd] (COM BOTÕES DE QUANTIDADE)
+// COMANDO: !comprar <item> [qtd]
 // =========================================
 export async function executeComprar(ctx) {
   const { reply, sender, q, client, jid, msg } = ctx;
@@ -252,11 +273,13 @@ export async function executeComprar(ctx) {
   const itemComida = Object.entries(ITENS).find(([k, v]) => k === nome || v.nome.toLowerCase() === nome);
 
   const item = itemBola || itemComida;
-  if (!item) return reply('❌ Item inválido. Veja com `!lojapokemon` ou `!lojapokebola`.');
+  if (!item) {
+    await reagir(client, msg, '❌');
+    return reply('❌ Item inválido. Veja com `!lojapokemon` ou `!lojapokebola`.');
+  }
 
   const [chave, dados] = item;
 
-  // Se a pessoa ainda NÃO escolheu a quantidade, mostra a lista de quantidades
   if (qtd === 0) {
     const secoesQtd = [
       {
@@ -287,11 +310,11 @@ export async function executeComprar(ctx) {
     }
   }
 
-  // Se a quantidade já foi escolhida, processa a compra
   const quantidadeFinal = qtd;
   const precoTotal = dados.preco * quantidadeFinal;
 
   if (user.pokecoins < precoTotal) {
+    await reagir(client, msg, '❌');
     return reply(`❌ Você precisa de ${precoTotal.toLocaleString('pt-BR')} PokéCoins. Saldo: ${user.pokecoins}.`);
   }
 
@@ -304,6 +327,7 @@ export async function executeComprar(ctx) {
   }
 
   salvarUsuario(sender, user);
+  await reagir(client, msg, '🛒');
 
   return reply(
     `✅ Comprou *${quantidadeFinal}x ${dados.emoji} ${dados.nome}*!\n` +
@@ -321,14 +345,17 @@ export async function executeCapturar(ctx) {
   const user = getUsuario(sender);
   const jid = msg.key.remoteJid;
 
-  // Verifica se tem spawn NESTE grupo específico
   const spawn = db.spawnsAtivos && db.spawnsAtivos[jid];
 
-  if (!spawn) return client.sendMessage(jid, { text: '❌ Nenhum Pokémon apareceu neste grupo ainda. Aguarde!' });
+  if (!spawn) {
+    await reagir(client, msg, '❌');
+    return client.sendMessage(jid, { text: '❌ Nenhum Pokémon apareceu neste grupo ainda. Aguarde!' });
+  }
 
   if (Date.now() > spawn.expiraEm) {
     delete db.spawnsAtivos[jid];
     salvarDB(db);
+    await reagir(client, msg, '💨');
     return client.sendMessage(jid, { text: '💨 O Pokémon fugiu! Ele ficou muito tempo sem ser capturado.' });
   }
 
@@ -337,18 +364,24 @@ export async function executeCapturar(ctx) {
   let bolaKey = args[1] || 'normal';
 
   if (!nomeDigitado) return client.sendMessage(jid, { text: `❌ Use: ${PREFIX}capturar <nome> [bola]` });
-  if (nomeDigitado !== spawn.pokemon.nome.toLowerCase()) return client.sendMessage(jid, { text: `❌ O nome não corresponde ao Pokémon selvagem.` });
+  if (nomeDigitado !== spawn.pokemon.nome.toLowerCase()) {
+    await reagir(client, msg, '❌');
+    return client.sendMessage(jid, { text: `❌ O nome não corresponde ao Pokémon selvagem.` });
+  }
 
   if (!POKEBOLAS[bolaKey]) {
+    await reagir(client, msg, '❌');
     return client.sendMessage(jid, { text: `❌ Pokébola inválida. Escolha entre: normal, great, ultra, master.` });
   }
 
   if (!user.pokebolas[bolaKey] || user.pokebolas[bolaKey] <= 0) {
+    await reagir(client, msg, '❌');
     return client.sendMessage(jid, { 
       text: `❌ Você não tem *${POKEBOLAS[bolaKey].nome}*.\n\n${textoInventario(user)}\n\n💡 Compre com \`!comprar ${bolaKey}\`.`
     });
   }
 
+  await reagir(client, msg, '🎯');
   user.pokebolas[bolaKey]--;
   
   const chance = calcularCaptura(spawn.pokemon, bolaKey);
@@ -369,6 +402,7 @@ export async function executeCapturar(ctx) {
     textoFinal = `🎉 *CAPTURADO!*\n\n${pokemon.emoji} *${pokemon.nome}*\n${r.emoji} ${r.nome} ${r.estrelas}\n❤️ HP: ${pokemon.hp} | ⚔️ ATK: ${pokemon.atk}\n\n🎒 Total: ${user.pokemons.length} Pokémons\n⭐ +100 XP\n\n${textoInventario(user)}`;
     
     if (resultadoXp.subiu) textoFinal += `\n\n${resultadoXp.mensagem}`;
+    await reagir(client, msg, '🎉');
     
   } else {
     if (Math.random() < 0.3) {
@@ -378,6 +412,7 @@ export async function executeCapturar(ctx) {
       textoFinal = `😢 *${spawn.pokemon.emoji} ${spawn.pokemon.nome}* escapou da Pokébola!\n\n${textoInventario(user)}`;
     }
     db.usuarios[sender] = user; 
+    await reagir(client, msg, '💨');
   }
 
   salvarDB(db);
@@ -408,33 +443,70 @@ export async function executeCapturar(ctx) {
 }
 
 // =========================================
-// COMANDO: !batalhapokemon @user (DÁ XP)
+// COMANDO: !batalhapokemon @user (MELHORADO E CORRIGIDO)
 // =========================================
 export async function executeBatalhaPokemon(ctx) {
-  const { reply, sender, msg, pushName } = ctx;
+  const { reply, sender, msg, pushName, client, jid } = ctx;
   const user = getUsuario(sender);
 
-  if (user.pokemonAtivo === null) return reply('❌ Você precisa de um Pokémon ativo.');
+  if (user.pokemonAtivo === null) {
+    await reagir(client, msg, '❌');
+    return reply('❌ Você precisa de um Pokémon ativo.');
+  }
 
   const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
-  if (mentions.length === 0) return reply(`❌ Marque alguém! Ex: ${PREFIX}batalhapokemon @joao`);
+  if (mentions.length === 0) {
+    await reagir(client, msg, '❌');
+    return reply(`❌ Marque alguém! Ex: ${PREFIX}batalhapokemon @joao`);
+  }
 
   const oponente = mentions[0];
-  if (oponente === sender) return reply('❌ Você não pode batalhar contra si mesmo.');
+  if (oponente === sender) {
+    await reagir(client, msg, '❌');
+    return reply('❌ Você não pode batalhar contra si mesmo.');
+  }
 
   const userO = getUsuario(oponente);
-  if (userO.pokemonAtivo === null) return reply('❌ O oponente não tem Pokémon ativo.');
+  if (userO.pokemonAtivo === null) {
+    await reagir(client, msg, '❌');
+    return reply('❌ O oponente não tem Pokémon ativo.');
+  }
+
+  await reagir(client, msg, '⚔️');
 
   const p1 = user.pokemons[user.pokemonAtivo];
   const p2 = userO.pokemons[userO.pokemonAtivo];
 
-  const poder1 = p1.hp + p1.atk + p1.def + p1.velocidade + (p1.felicidade / 5);
-  const poder2 = p2.hp + p2.atk + p2.def + p2.velocidade + (p2.felicidade / 5);
+  // Proteção contra dados corrompidos (NaN)
+  const v1 = Number(p1.velocidade) || 50;
+  const f1 = Number(p1.felicidade) || 50;
+  const v2 = Number(p2.velocidade) || 50;
+  const f2 = Number(p2.felicidade) || 50;
+
+  const poder1 = (Number(p1.hp)||50) + (Number(p1.atk)||50) + (Number(p1.def)||50) + v1 + (f1 / 5);
+  const poder2 = (Number(p2.hp)||50) + (Number(p2.atk)||50) + (Number(p2.def)||50) + v2 + (f2 / 5);
 
   const vencedor = poder1 >= poder2 ? 'p1' : 'p2';
   const premio = 100;
 
+  let textoInicial = `⚔️ *BATALHA POKÉMON INICIADA!* ⚔️\n\n` +
+    `👤 *${pushName}*\n   ${p1.emoji} ${p1.nome} (Poder: ${poder1.toFixed(0)})\n\n` +
+    `🆚\n\n` +
+    `👤 *Oponente*\n   ${p2.emoji} ${p2.nome} (Poder: ${poder2.toFixed(0)})\n\n` +
+    `⏳ *Os Pokémon estão se preparando...*`;
+
+  let msgBatalha = await client.sendMessage(jid, { text: textoInicial }, { quoted: msg });
+
+  await delay(2000);
+  await client.sendMessage(jid, { edit: msgBatalha.key, text: textoInicial + `\n\n💥 *Turno 1:* ${p1.nome} usou um ataque!` });
+
+  await delay(2000);
+  await client.sendMessage(jid, { edit: msgBatalha.key, text: textoInicial + `\n\n💥 *Turno 1:* ${p1.nome} usou um ataque!\n💥 *Turno 2:* ${p2.nome} revidou!` });
+
+  await delay(2000);
+
   let resultadoXp;
+  let textoFinal = '';
 
   if (vencedor === 'p1') {
     p1.level += 1; p1.hp += 5; p1.atk += 3; p1.def += 3;
@@ -443,6 +515,17 @@ export async function executeBatalhaPokemon(ctx) {
     p2.atk = Math.max(1, p2.atk - 2); p2.def = Math.max(1, p2.def - 2); p2.felicidade = Math.max(0, p2.felicidade - 10);
     
     resultadoXp = adicionarXpTreinador(user, 250);
+    user = resultadoXp.user; // Atualiza o user com o novo XP
+
+    textoFinal = `⚔️ *FIM DA BATALHA!* ⚔️\n\n` +
+      `🏆 *VENCEDOR:* ${pushName}\n` +
+      `   ${p1.emoji} ${p1.nome} (Lv.${p1.level})\n\n` +
+      `💰 Prêmio: ${premio} PokéCoins\n` +
+      `⭐ +250 XP de Treinador\n\n` +
+      `👎 *DERROTADO:* Oponente\n` +
+      `   ${p2.emoji} ${p2.nome} (Perdeu status)`;
+
+    await reagir(client, msg, '🏆'); // Reação de vitória
   } else {
     p2.level += 1; p2.hp += 5; p2.atk += 3; p2.def += 3;
     userO.pokecoins += premio;
@@ -450,22 +533,33 @@ export async function executeBatalhaPokemon(ctx) {
     p1.atk = Math.max(1, p1.atk - 2); p1.def = Math.max(1, p1.def - 2); p1.felicidade = Math.max(0, p1.felicidade - 10);
     
     resultadoXp = adicionarXpTreinador(userO, 250);
+    userO = resultadoXp.user;
+
+    textoFinal = `⚔️ *FIM DA BATALHA!* ⚔️\n\n` +
+      `🏆 *VENCEDOR:* Oponente\n` +
+      `   ${p2.emoji} ${p2.nome} (Lv.${p2.level})\n\n` +
+      `💰 Prêmio: ${premio} PokéCoins\n` +
+      `⭐ +250 XP de Treinador\n\n` +
+      `👎 *DERROTADO:* ${pushName}\n` +
+      `   ${p1.emoji} ${p1.nome} (Perdeu status)`;
+
+    await reagir(client, msg, '💀'); // Reação de derrota
   }
+
+  if (resultadoXp.subiu) textoFinal += `\n\n${resultadoXp.mensagem}`;
 
   salvarUsuario(sender, user);
   salvarUsuario(oponente, userO);
 
-  let texto = `⚔️ *BATALHA POKÉMON*\n\n👤 *${pushName}*\n   ${p1.emoji} ${p1.nome} (Lv.${p1.level})\n   Poder: ${poder1.toFixed(0)}\n\n🆚\n\n👤 *Oponente*\n   ${p2.emoji} ${p2.nome} (Lv.${p2.level})\n   Poder: ${poder2.toFixed(0)}\n\n🏆 *VENCEDOR:* ${vencedor === 'p1' ? pushName : 'Oponente'}\n💰 Prêmio: ${premio} PokéCoins\n⭐ +250 XP de Treinador`;
-
-  if (resultadoXp.subiu) texto += `\n\n${resultadoXp.mensagem}`;
-  return reply(texto);
+  // Edita a mensagem final
+  await client.sendMessage(jid, { edit: msgBatalha.key, text: textoFinal });
 }
 
 // =========================================
 // COMANDO: !ataque1 / !ataque2 / !ataque3
 // =========================================
 export async function executeAtaque(ctx, numero) {
-  const { reply, sender } = ctx;
+  const { reply, sender, client, msg } = ctx;
   const user = getUsuario(sender);
 
   if (user.pokemonAtivo === null) return reply('❌ Você precisa de um Pokémon ativo.');
@@ -481,6 +575,8 @@ export async function executeAtaque(ctx, numero) {
   const atk = ataques[numero];
   if (!atk) return reply('❌ Ataque inválido.');
 
+  await reagir(client, msg, atk.emoji);
+
   return reply(
     `⚔️ *${p.emoji} ${p.nome}* usou *${atk.emoji} ${atk.nome}*!\n\n` +
     `💥 Dano estimado: ${atk.dano.toFixed(0)}\n` +
@@ -489,28 +585,31 @@ export async function executeAtaque(ctx, numero) {
 }
 
 // =========================================
-// COMANDO: !ativarspawn (AGORA ADMINS PODEM USAR)
+// COMANDO: !ativarspawn
 // =========================================
 export async function executeAtivarSpawn(ctx) {
   const { reply, sender, msg, isGroup, groupMetadata, client } = ctx;
   
   if (!isGroup) return reply('❌ Use este comando dentro do grupo onde você quer ativar o spawn.');
 
-  // Pega os metadados atualizados para ter certeza que a pessoa é admin
   const meta = groupMetadata || await client.groupMetadata(msg.key.remoteJid).catch(() => null);
   
   if (!isOwner(sender) && !isAdmin(sender, meta)) {
+    await reagir(client, msg, '❌');
     return reply('❌ Apenas administradores do grupo (ou o dono do bot) podem ativar o spawn.');
   }
 
   if (!setSpawnGrupo(msg.key.remoteJid, true)) {
+    await reagir(client, msg, '⚠️');
     return reply('⚠️ O spawn já está ativado *neste grupo*.');
   }
+  
+  await reagir(client, msg, '✅');
   return reply('✅ *SPAWN ATIVADO NESTE GRUPO!*\n\nOs Pokémons vão aparecer aqui. Os outros grupos não são afetados.');
 }
 
 // =========================================
-// COMANDO: !desativarspawn (AGORA ADMINS PODEM USAR)
+// COMANDO: !desativarspawn
 // =========================================
 export async function executeDesativarSpawn(ctx) {
   const { reply, sender, msg, isGroup, groupMetadata, client } = ctx;
@@ -520,11 +619,15 @@ export async function executeDesativarSpawn(ctx) {
   const meta = groupMetadata || await client.groupMetadata(msg.key.remoteJid).catch(() => null);
 
   if (!isOwner(sender) && !isAdmin(sender, meta)) {
+    await reagir(client, msg, '❌');
     return reply('❌ Apenas administradores do grupo (ou o dono do bot) podem desativar o spawn.');
   }
 
   if (!setSpawnGrupo(msg.key.remoteJid, false)) {
+    await reagir(client, msg, '⚠️');
     return reply('⚠️ O spawn já está desativado *neste grupo*.');
   }
+  
+  await reagir(client, msg, '🔕');
   return reply('🔕 *SPAWN DESATIVADO NESTE GRUPO!*\n\nOs Pokémons não vão mais aparecer aqui.');
 }
