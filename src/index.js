@@ -78,6 +78,7 @@ import { executePlay } from './commands/play.js';
 import { executePokemon, executeMeusPokemons, executeTrocar, executeAlimentar, executeBatalhaPokemon, executeAtaque, executeLojaPokemon, executeLojaPokebola, executeComprar, executeCapturar, executeAtivarSpawn, executeDesativarSpawn } from './commands/pokemon.js';
 import { executeRaid, executePasse, executeComprarPasse, executeAtivarRaid, executeDesativarRaid, executeForcarRaid } from './commands/raid.js';
 import { forcarSpawn } from './functions/pokemonSpawn.js';
+import { executeCambio } from './commands/cambio.js'; // <-- NOVO IMPORT DE CÂMBIO AQUI
 
 import { executeSetDelay, executeSetLimite, executeAntiFlood } from './commands/antiflood_cmd.js';
 import { executePerfil as executePerfilRPG, executeApostar, executeInvestir, executeRoubar, executePix, executeBanco, executeTrabalhar, executeEmpregos, executeAdotar, executePets, executeTrocarPet, executeBatalhaPet, executeComprarCasa, executeCasas } from './commands/rpg.js';
@@ -457,7 +458,9 @@ export async function handleMessage(client, msg) {
       await executeGerarComando(ctx);
       break;
 
-    // ================= POKÉMON =================
+    // ================= POKÉMON E RPG =================
+    case 'cambio': case 'cambiar': case 'trocarpokecoins': await executeCambio(ctx); break; // <-- NOVO CASE AQUI
+
     case 'menupokemon': case 'menupoke': await executeMenuPokemon(ctx); break;
     case 'pokemon': await executePokemon(ctx); break;
     case 'meuspokemons': await executeMeusPokemons(ctx); break;
@@ -657,7 +660,8 @@ export async function handleMessage(client, msg) {
           `> 🎰 Novos botões para Apostar e Investir no RPG.\n` +
           `> 🛡️ Opções de menus aleatórios para facilitar a navegação.\n` +
           `> 💸 Sistema de PIX e transferências otimizado.\n` +
-          `> 🎵 Novo comando de figurinha com áudio.\n\n` +
+          `> 🎵 Novo comando de figurinha com áudio.\n` +
+          `> 💱 Novo sistema de Câmbio (Coins para PokéCoins).\n\n` +
           `_Fique de olho, novidades são adicionadas toda semana!_`;
         
         return reply(changelog);
@@ -897,4 +901,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-    }
+        }
