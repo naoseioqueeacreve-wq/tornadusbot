@@ -21,7 +21,7 @@ import { isVIP, isVIPCommand } from './functions/vipDB.js';
 import { getRespostaBotao, enviarBotoes, botaoResposta } from './functions/botoes.js';
 import { executeMenuBotoes, executePing } from './commands/menuBotoes.js';
 
-// SISTEMA ANTI-PAYMENT
+// SISTEMA ANTI-PAYMENT (O nome do arquivo deve ser este, mude se você renomeou)
 import { verificarAntiPayment } from './functions/antipaymente.js';
 
 // SISTEMA IA GRUPO (NOVO)
@@ -68,7 +68,15 @@ import { executeRaspadinha, executeCassino, executeDuelo, executePresentear, exe
 import { executeFNAFStart, executeVerCamera, executeFecharCamera, executePorta, executeLuz, executeStatusFNAF } from './commands/fnaf.js';
 import { executeFazendas, executeComprarFazenda, executeMinhaFazenda, executeLojaAnimais, executeComprarAnimal, executeMelhorias, executeComprarMelhoria, executeColetar } from './commands/fazenda.js';
 import { executeCidade, executeCriarCidade, executeConstruir, executeColetarImpostos, executeRankingCidade, executeDemolir, executeMelhorarEstrutura, executeProposta, executeAceitarProposta, executeRecusarProposta } from './commands/cidade.js';
-import { executePescar, executeAquario, executeVenderPeixes, executeComprarIscas, executeCriarCla, executeEntrarCla, executeSairCla, executeMeuCla, executeRankingClas, executeCasar, executeDivorciar, executeMeuCasamento } from './commands/rpgExtras.js';
+
+// IMPORTS RPG EXTRAS (PESCA, CLÃS, CASAMENTO)
+import { 
+  executePescar, executeAquario, executeVenderPeixes, 
+  executeLojaPesca, executeComprarVara, executeComprarIsca,
+  executeCriarCla, executeEntrarCla, executeSairCla, executeMeuCla, executeRankingClas, 
+  executeCasar, executeDivorciar, executeMeuCasamento 
+} from './commands/rpgExtras.js';
+
 import { executeMeuNivel, executeLojaPocoes, executeComprarPocao, executeMeusBuffs, executeEmprestimo, executePagarEmprestimo } from './commands/extras.js';
 import { executeAluguelGlobal, executeAluguel, executeRgAluguel, executeRmAluguel, executeRnAluguel } from './commands/aluguel.js';
 import { executeListarAlugueis, executeLimparAlugueis } from './commands/aluguel_debug.js';
@@ -78,7 +86,10 @@ import { executePlay } from './commands/play.js';
 import { executePokemon, executeMeusPokemons, executeTrocar, executeAlimentar, executeBatalhaPokemon, executeAtaque, executeLojaPokemon, executeLojaPokebola, executeComprar, executeCapturar, executeAtivarSpawn, executeDesativarSpawn } from './commands/pokemon.js';
 import { executeRaid, executePasse, executeComprarPasse, executeAtivarRaid, executeDesativarRaid, executeForcarRaid } from './commands/raid.js';
 import { forcarSpawn } from './functions/pokemonSpawn.js';
-import { executeCambio } from './commands/cambio.js'; // <-- NOVO IMPORT DE CÂMBIO AQUI
+
+// IMPORTS RPG AVANÇADO (EXPLORAÇÃO E ARENA)
+import { executeExplorar, executeAbrirCaixa, executeInventario, executeArena, executeRankingArena } from './commands/rpgAvancado.js';
+import { executeCambio } from './commands/cambio.js';
 
 import { executeSetDelay, executeSetLimite, executeAntiFlood } from './commands/antiflood_cmd.js';
 import { executePerfil as executePerfilRPG, executeApostar, executeInvestir, executeRoubar, executePix, executeBanco, executeTrabalhar, executeEmpregos, executeAdotar, executePets, executeTrocarPet, executeBatalhaPet, executeComprarCasa, executeCasas } from './commands/rpg.js';
@@ -459,7 +470,7 @@ export async function handleMessage(client, msg) {
       break;
 
     // ================= POKÉMON E RPG =================
-    case 'cambio': case 'cambiar': case 'trocarpokecoins': await executeCambio(ctx); break; // <-- NOVO CASE AQUI
+    case 'cambio': case 'cambiar': case 'trocarpokecoins': await executeCambio(ctx); break; 
 
     case 'menupokemon': case 'menupoke': await executeMenuPokemon(ctx); break;
     case 'pokemon': await executePokemon(ctx); break;
@@ -487,6 +498,31 @@ export async function handleMessage(client, msg) {
       const forcou = await forcarSpawn(client, jid);
       if (!forcou) reply('⚠️ Já tem um Pokémon esperando captura.');
       break;
+
+    // ================= PESCA, CLÃS E CASAMENTO =================
+    case 'pescar': await executePescar(ctx); break;
+    case 'aquario': await executeAquario(ctx); break;
+    case 'venderpeixes': await executeVenderPeixes(ctx); break;
+    case 'lojapesca': await executeLojaPesca(ctx); break;
+    case 'comprarvara': await executeComprarVara(ctx); break;
+    case 'comprarisca': await executeComprarIsca(ctx); break;
+    
+    case 'criarcla': await executeCriarCla(ctx); break;
+    case 'entrarcla': await executeEntrarCla(ctx); break;
+    case 'saircla': await executeSairCla(ctx); break;
+    case 'meucla': case 'cla': await executeMeuCla(ctx); break;
+    case 'rankingclas': await executeRankingClas(ctx); break;
+
+    case 'casar': await executeCasar(ctx); break;
+    case 'divorciar': await executeDivorciar(ctx); break;
+    case 'meucasamento': case 'casamento': await executeMeuCasamento(ctx); break;
+
+    // ================= RPG AVANÇADO =================
+    case 'explorar': await executeExplorar(ctx); break;
+    case 'abrircaixa': await executeAbrirCaixa(ctx); break;
+    case 'inventario': await executeInventario(ctx); break;
+    case 'arena': await executeArena(ctx); break;
+    case 'rankingarena': await executeRankingArena(ctx); break;
 
     // ================= APIS YUTA =================
     case 'letra': await executeLetra(ctx); break;
@@ -661,7 +697,8 @@ export async function handleMessage(client, msg) {
           `> 🛡️ Opções de menus aleatórios para facilitar a navegação.\n` +
           `> 💸 Sistema de PIX e transferências otimizado.\n` +
           `> 🎵 Novo comando de figurinha com áudio.\n` +
-          `> 💱 Novo sistema de Câmbio (Coins para PokéCoins).\n\n` +
+          `> 💱 Novo sistema de Câmbio (Coins para PokéCoins).\n` +
+          `> 🎣 Sistema de pesca reformulado com varas, iscas e novos peixes.\n\n` +
           `_Fique de olho, novidades são adicionadas toda semana!_`;
         
         return reply(changelog);
@@ -816,18 +853,6 @@ export async function handleMessage(client, msg) {
     case 'proposta': await executeProposta(ctx); break;
     case 'aceitarproposta': await executeAceitarProposta(ctx); break;
     case 'recusarproposta': await executeRecusarProposta(ctx); break;
-    case 'pescar': await executePescar(ctx); break;
-    case 'aquario': await executeAquario(ctx); break;
-    case 'venderpeixes': await executeVenderPeixes(ctx); break;
-    case 'comprariscas': await executeComprarIscas(ctx); break;
-    case 'criarcla': await executeCriarCla(ctx); break;
-    case 'entrarcla': await executeEntrarCla(ctx); break;
-    case 'saircla': await executeSairCla(ctx); break;
-    case 'meucla': case 'cla': await executeMeuCla(ctx); break;
-    case 'rankingclas': await executeRankingClas(ctx); break;
-    case 'casar': await executeCasar(ctx); break;
-    case 'divorciar': await executeDivorciar(ctx); break;
-    case 'meucasamento': case 'casamento': await executeMeuCasamento(ctx); break;
     case 'meunivel': case 'nivel': await executeMeuNivel(ctx); break;
     case 'lojapocoes': await executeLojaPocoes(ctx); break;
     case 'comprarpocao': await executeComprarPocao(ctx); break;
@@ -901,4 +926,4 @@ export async function handleMessage(client, msg) {
       await client.sendMessage(jid, payload, { quoted: msg });
     } catch (e) {}
   }
-        }
+  }
