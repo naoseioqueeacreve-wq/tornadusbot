@@ -2,8 +2,8 @@ import { PREFIX } from '../config.js';
 import { getUsuario, salvarUsuario } from '../functions/rpg.js';
 import { enviarBotoes, botaoLista, botaoResposta } from '../functions/botoes.js';
 import { 
-  lerDB, 
-  salvarDB,
+  getPesca, 
+  salvarPesca,
   getClas, 
   criarCla, 
   entrarCla, 
@@ -76,27 +76,18 @@ const LISTA_PEIXES = [
 // =========================================
 // FUNÇÕES AUXILIARES DO BANCO DE DADOS DE PESCA
 // =========================================
-function getPescaJogador(sender) {
-  const db = lerDB();
-  if (!db.pesca) db.pesca = {};
-  if (!db.pesca[sender]) {
-    db.pesca[sender] = {
-      ultimaPesca: 0,
-      varaAtual: 'bambu',
-      iscas: { minhoca: 10, camarao: 0, lula: 0, peixe_vivo: 0, dourada: 0 },
-      aquario: [],
-      totalPescado: 0,
-      recorde: null
-    };
-    salvarDB(db);
+function prepararPesca(sender) {
+  const pesca = getPesca(sender);
+  
+  if (!pesca.varaAtual) pesca.varaAtual = 'bambu';
+  if (typeof pesca.iscas === 'number') {
+    const qtdAntiga = pesca.iscas;
+    pesca.iscas = { minhoca: qtdAntiga, camarao: 0, lula: 0, peixe_vivo: 0, dourada: 0 };
+  } else if (!pesca.iscas) {
+    pesca.iscas = { minhoca: 10, camarao: 0, lula: 0, peixe_vivo: 0, dourada: 0 };
   }
-  return db.pesca[sender];
-}
-
-function salvarPescaJogador(sender, dados) {
-  const db = lerDB();
-  db.pesca[sender] = dados;
-  salvarDB(db);
+  
+  return pesca;
 }
 
 // =========================================
@@ -104,7 +95,7 @@ function salvarPescaJogador(sender, dados) {
 // =========================================
 export async function executePescar(ctx) {
   const { reply, sender, client, msg, jid, q } = ctx;
-  const pesca = getPescaJogador(sender);
+  const pesca = prepararPesca(sender);
 
   const cooldown = 60 * 1000;
   const agora = Date.now();
@@ -163,7 +154,7 @@ export async function executePescar(ctx) {
     : 0;
 
   if (peixeSorteado.raridade === 'lixo') {
-    salvarPescaJogador(sender, pesca);
+    salvarPesca(sender, pesca);
     return reply(`🎣 Você fisgou... ${peixeSorteado.emoji} *${peixeSorteado.nome}* 😢\n\nMelhor sorte na próxima! (Isca perdida)`);
   }
 
@@ -180,7 +171,7 @@ export async function executePescar(ctx) {
     pesca.recorde = { nome: peixeSorteado.nome, emoji: peixeSorteado.emoji, preco: precoFinal };
   }
 
-  salvarPescaJogador(sender, pesca);
+  salvarPesca(sender, pesca);
 
   const raridadeEmoji = { comum: '⚪', incomum: '🟢', raro: '🔵', epico: '🟣', lendario: '🟡', mitico: '🌈' };
 
@@ -196,7 +187,7 @@ export async function executePescar(ctx) {
 
 export async function executeAquario(ctx) {
   const { reply, sender, client, msg, jid } = ctx;
-  const pesca = getPescaJogador(sender);
+  const pesca = prepararPesca(sender);
 
   if (pesca.aquario.length === 0) return reply('🎣 Seu aquário está vazio! Use `!pescar` para pescar.');
 
@@ -238,7 +229,7 @@ export async function executeAquario(ctx) {
 export async function executeVenderPeixes(ctx) {
   const { reply, sender } = ctx;
   const user = getUsuario(sender);
-  const pesca = getPescaJogador(sender);
+  const pesca = prepararPesca(sender);
 
   if (pesca.aquario.length === 0) return reply('❌ Seu aquário está vazio!');
 
@@ -249,14 +240,14 @@ export async function executeVenderPeixes(ctx) {
   pesca.aquario = [];
 
   salvarUsuario(sender, user);
-  salvarPescaJogador(sender, pesca);
+  salvarPesca(sender, pesca);
 
   return reply(`💰 *PEIXES VENDIDOS!*\n\n🐟 Qtd: ${quantidade}\n💵 Total: *${total.toLocaleString('pt-BR')} coins*\n\n💼 Saldo: ${user.coins.toLocaleString('pt-BR')}`);
 }
 
 export async function executeLojaPesca(ctx) {
   const { client, msg, sender, jid, q } = ctx;
-  const pesca = getPescaJogador(sender);
+  const pesca = prepararPesca(sender);
   
   const aba = q.trim().toLowerCase();
 
@@ -307,11 +298,31 @@ export async function executeLojaPesca(ctx) {
   }
 }
 
+// =========================================
+// COMPRAR VARA (COM BOTÕES SE NÃO ESPECIFICAR)
+// =========================================
 export async function executeComprarVara(ctx) {
-  const { reply, sender, q } = ctx;
+  const { reply, sender, q, client, msg, jid } = ctx;
   const user = getUsuario(sender);
-  const pesca = getPescaJogador(sender);
+  const pesca = prepararPesca(sender);
   const varaKey = q.trim().toLowerCase();
+
+  // Se não especificou a vara, mostra o menu
+  if (!varaKey) {
+    const secoes = [
+      {
+        titulo: "🎣 𝙑𝘼𝙍𝘼𝙎 ↴",
+        linhas: Object.entries(VARA_PESCA).map(([k, v]) => ({
+          titulo: `${v.emoji} ${v.nome}`,
+          descricao: `Preço: ${v.preco.toLocaleString('pt-BR')} | Bônus: x${v.bonus}`,
+          tag: pesca.varaAtual === k ? "Equipada" : "Comprar",
+          id: `${PREFIX}comprarvara ${k}`
+        }))
+      }
+    ];
+    const botoes = [ botaoLista('『 𝑪𝑶𝑴𝑷𝑹𝑨𝑹 𝑽𝑨𝑹𝑨 』', secoes) ];
+    return await enviarBotoes(client, jid, { titulo: '🎣 Loja de Varas', corpo: 'Escolha a vara que deseja comprar:', botoes }, msg);
+  }
 
   if (!VARA_PESCA[varaKey]) return reply('❌ Vara inválida.');
   if (pesca.varaAtual === varaKey) return reply('❌ Você já está usando essa vara!');
@@ -323,32 +334,63 @@ export async function executeComprarVara(ctx) {
   pesca.varaAtual = varaKey;
 
   salvarUsuario(sender, user);
-  salvarPescaJogador(sender, pesca);
+  salvarPesca(sender, pesca);
 
   return reply(`✅ Você comprou e equipou a *${VARA_PESCA[varaKey].emoji} ${VARA_PESCA[varaKey].nome}*!`);
 }
 
+// =========================================
+// COMPRAR ISCA (COM BOTÕES SE NÃO ESPECIFICAR)
+// =========================================
 export async function executeComprarIsca(ctx) {
-  const { reply, sender, q } = ctx;
+  const { reply, sender, q, client, msg, jid } = ctx;
   const user = getUsuario(sender);
-  const pesca = getPescaJogador(sender);
+  const pesca = prepararPesca(sender);
   
   const partes = q.trim().toLowerCase().split(/\s+/);
   const tipo = partes[0];
   const qtd = parseInt(partes[1]) || 10; 
 
+  // Se não especificou o tipo de isca, mostra o menu de botões
+  if (!tipo) {
+    const secoes = [
+      {
+        titulo: "🪱 𝙀𝙎𝘾𝙊𝙇𝙃𝘼 𝘼 𝙄𝙎𝘾𝘼 ↴",
+        linhas: Object.entries(TIPOS_ISCA).map(([k, v]) => ({
+          titulo: `${v.emoji} ${v.nome} (Pacote 10x)`,
+          descricao: `Preço: ${(v.preco * 10).toLocaleString('pt-BR')} coins | Atrai: ${v.raridades.join(', ')}`,
+          tag: "Comprar",
+          id: `${PREFIX}comprarisca ${k} 10`
+        }))
+      }
+    ];
+    const botoes = [ botaoLista('『 𝑪𝑶𝑴𝑷𝑹𝑨𝑹 𝑰𝑺𝑪𝑨 』', secoes) ];
+    const texto = `🛒 *COMPRAR ISCAS*\n\nEscolha o tipo de isca que deseja comprar (pacote com 10):`;
+    
+    try {
+      return await enviarBotoes(client, jid, {
+        titulo: '🪱 Loja de Iscas',
+        corpo: texto,
+        rodape: '© Pikachu Bot',
+        botoes
+      }, msg);
+    } catch {
+      return reply(texto + `\nUse: ${PREFIX}comprarisca <${Object.keys(TIPOS_ISCA).join('|')}> <qtd>`);
+    }
+  }
+
   if (!TIPOS_ISCA[tipo]) return reply('❌ Isca inválida.');
 
   const custo = TIPOS_ISCA[tipo].preco * qtd;
-  if (user.coins < custo) return reply(`❌ Você precisa de ${custo.toLocaleString('pt-BR')} coins.`);
+  if (user.coins < custo) return reply(`❌ Você precisa de ${custo.toLocaleString('pt-BR')} coins.\n💼 Saldo: ${user.coins.toLocaleString('pt-BR')}`);
 
   user.coins -= custo;
   pesca.iscas[tipo] = (pesca.iscas[tipo] || 0) + qtd;
 
   salvarUsuario(sender, user);
-  salvarPescaJogador(sender, pesca);
+  salvarPesca(sender, pesca);
 
-  return reply(`✅ Você comprou *${qtd}x ${TIPOS_ISCA[tipo].emoji} ${TIPOS_ISCA[tipo].nome}*!\n💼 Saldo: ${user.coins.toLocaleString('pt-BR')}`);
+  return reply(`✅ Você comprou *${qtd}x ${TIPOS_ISCA[tipo].emoji} ${TIPOS_ISCA[tipo].nome}*!\n💰 Custo: ${custo.toLocaleString('pt-BR')} coins\n💼 Saldo: ${user.coins.toLocaleString('pt-BR')}`);
 }
 
 // =========================================
